@@ -3,11 +3,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.example</groupId>
-  <artifactId>service-vacations</artifactId>
+  <artifactId>service-employee</artifactId>
   <version>1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>service-vacations</name>
+  <name>service-persons</name>
   <url>http://maven.apache.org</url>
 
   <properties>
