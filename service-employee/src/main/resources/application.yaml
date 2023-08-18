@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/postgres
+    username: postgres
+    password: Czcmcnhjq0
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+
+jwt:
+  secret:
+    access: OLJuee9a1+n3ONAd8Rdbl2Y1BoDMAZd8eW8vI0IKHS273AQ0LqtpZw5rLRb3NsGzj7OFhSe/S4GneungbqWGgw==
+    refresh: z96L8mzalHF69OTHX0hiUZVH9+8cUUm+QRLRaqUig08uJRbL69TVsMHcRL/hWqvJ8PToPOoAbTPImZOGZIDpZA==
+server:
+  port: 8000
