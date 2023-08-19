@@ -21,7 +21,10 @@ public class Employee {
         this.telegramName = telegramName;
         this.status = EmployeeStatus.WORK;
     }
-
+    public Employee(String fio, String telegramName,String password) {
+        this(fio,telegramName);
+        this.password = password;
+    }
     @Id
     @GeneratedValue
     private Long id;

@@ -33,12 +33,23 @@ public class SecurityConfig {
                 .and()
                 .authorizeHttpRequests(
                         auth -> auth
+                                .requestMatchers(new AntPathRequestMatcher("/empl/**")
+                                ).permitAll()
+                                .anyRequest().authenticated()
+                                .and()
+                                .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                ).build();
+                /*
+                .authorizeHttpRequests(
+                        auth -> auth
                                 .requestMatchers(new AntPathRequestMatcher("/empl/auth**"),
                                         new AntPathRequestMatcher("/empl/hello**")).permitAll()
                                 .anyRequest().authenticated()
                                 .and()
                                 .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 ).build();
+
+                 */
     }
 
 }
