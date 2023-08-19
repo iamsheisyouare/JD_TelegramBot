@@ -26,15 +26,15 @@ public class SecurityConfig {
     @SneakyThrows
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
-                .securityMatcher("/api/**")
+                .securityMatcher("/empl/**")
                 .httpBasic().disable()
                 .csrf().disable()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeHttpRequests(
                         auth -> auth
-                                .requestMatchers(new AntPathRequestMatcher("/api/auth**"),
-                                        new AntPathRequestMatcher("/api/hello**")).permitAll()
+                                .requestMatchers(new AntPathRequestMatcher("/empl/auth**"),
+                                        new AntPathRequestMatcher("/empl/hello**")).permitAll()
                                 .anyRequest().authenticated()
                                 .and()
                                 .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -3,6 +3,7 @@ package org.example.model.jwt;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.Authentication;
@@ -38,4 +39,11 @@ public class JwtAuthentication implements Authentication {
 
     @Override
     public String getName() { return fullName; }
+
+    public boolean hasAdminRole()
+    {
+        return privileges.stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toList()).contains("ADMIN_ROLE");
+    }
 }
