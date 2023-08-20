@@ -6,6 +6,7 @@ import java.util.UUID;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.EmplRequest;
+import org.example.dto.EmployeeResponse;
 import org.example.jwt.JwtCreator;
 import org.example.jwt.dto.JwtRequest;
 import org.example.jwt.dto.JwtResponse;
@@ -64,6 +65,13 @@ public class EmployeeService {
     public ResponseEntity<Employee> findById(Long id)
     {
         return ResponseEntity.ok(employeeRepository.findById(id).orElse(null));
+    }
+
+    public ResponseEntity<EmployeeResponse> findByName(String name)
+    {
+        Employee empl= employeeRepository.findByTelegramName(name).orElse(null);
+        if (empl == null) return ResponseEntity.ok(null);
+        return ResponseEntity.ok(new EmployeeResponse(empl.getTelegramName(),empl.getId(),empl.getToken()));
     }
 
 }

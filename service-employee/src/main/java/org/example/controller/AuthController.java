@@ -2,6 +2,7 @@ package org.example.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.example.dto.EmplRequest;
+import org.example.dto.EmployeeResponse;
 import org.example.jwt.JwtCreator;
 import org.example.jwt.dto.JwtRequest;
 import org.example.jwt.dto.JwtResponse;
@@ -61,5 +62,9 @@ public class AuthController {
     {
         return service.findById(id);
     }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @GetMapping("/name/{name}")
+    public ResponseEntity<EmployeeResponse> findByName(@PathVariable String name) {return service.findByName(name);}
 
 }
