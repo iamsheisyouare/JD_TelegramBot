@@ -14,6 +14,7 @@ import org.example.model.Employee;
 import org.example.model.Role;
 import org.example.repository.EmployeeRepository;
 import org.example.repository.RoleRepository;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -70,8 +71,8 @@ public class EmployeeService {
     public ResponseEntity<EmployeeResponse> findByName(String name)
     {
         Employee empl= employeeRepository.findByTelegramName(name).orElse(null);
-        if (empl == null) return ResponseEntity.ok(null);
-        return ResponseEntity.ok(new EmployeeResponse(empl.getTelegramName(),empl.getId(),empl.getToken()));
+        if (empl == null) return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
+        return ResponseEntity.ok(new EmployeeResponse(empl.getFio(),empl.getId(),empl.getToken()));
     }
 
 }
