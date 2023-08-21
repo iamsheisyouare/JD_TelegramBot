@@ -8,6 +8,7 @@ import org.example.jwt.dto.JwtRequest;
 import org.example.jwt.dto.JwtResponse;
 import org.example.model.Employee;
 import org.example.repository.EmployeeRepository;
+import org.example.service.AuthenticatedUserService;
 import org.example.service.EmployeeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -27,6 +28,8 @@ public class AuthController {
 
     private final JwtCreator jwtCreator;
     private final EmployeeService service;
+    private final AuthenticatedUserService authenticatedUserService;
+
 
 
     /**
@@ -56,14 +59,16 @@ public class AuthController {
      * @param id
      * @return
      */
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    //@PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("@authenticatedUserService.hasId(#id) or hasRole('ROLE_ADMIN')")
     @GetMapping("{id}")
     public ResponseEntity<Employee> findById(@PathVariable Long id)
     {
         return service.findById(id);
     }
 
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    //@PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("@authenticatedUserService.hasName(#name) or hasRole('ROLE_ADMIN')")
     @GetMapping("/name/{name}")
     public ResponseEntity<EmployeeResponse> findByName(@PathVariable String name) {return service.findByName(name);}
 
