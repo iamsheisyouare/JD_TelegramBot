@@ -32,6 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth -> auth
                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/empl/**")).hasAnyRole("USER")
+                                .requestMatchers(AntPathRequestMatcher.antMatcher("/employee/**")).hasAnyRole("USER")
                                 //.requestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**")).permitAll()
                                 //.requestMatchers(HttpMethod.GET, "/student/**").hasAnyRole("USER")
                                 // .requestMatchers(HttpMethod.GET, "/class/**").hasAnyRole("USER")
