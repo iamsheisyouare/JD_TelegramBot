@@ -1,5 +1,7 @@
 package org.example.config;
 
+import static org.springframework.security.config.Customizer.withDefaults;
+
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.example.jwt.JwtFilter;
@@ -25,6 +27,25 @@ public class SecurityConfig {
     @Bean
     @SneakyThrows
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+        http
+                .authorizeHttpRequests(
+                        auth -> auth
+                                .requestMatchers(AntPathRequestMatcher.antMatcher("/empl/**")).hasAnyRole("USER")
+                                .requestMatchers(AntPathRequestMatcher.antMatcher("/employee/**")).hasAnyRole("USER")
+                                //.requestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**")).permitAll()
+                                //.requestMatchers(HttpMethod.GET, "/student/**").hasAnyRole("USER")
+                                // .requestMatchers(HttpMethod.GET, "/class/**").hasAnyRole("USER")
+                                .anyRequest().authenticated()
+
+                )
+                .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .headers(headers -> headers.frameOptions().disable())
+                .httpBasic(withDefaults())
+                .csrf().disable();
+        return http.build();
+
+        /*
         return http
                 .securityMatcher("/empl/**")
                 .httpBasic().disable()
@@ -39,17 +60,7 @@ public class SecurityConfig {
                                 .and()
                                 .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 ).build();
-                /*
-                .authorizeHttpRequests(
-                        auth -> auth
-                                .requestMatchers(new AntPathRequestMatcher("/empl/auth**"),
-                                        new AntPathRequestMatcher("/empl/hello**")).permitAll()
-                                .anyRequest().authenticated()
-                                .and()
-                                .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                ).build();
-
-                 */
+                */
     }
 
 }

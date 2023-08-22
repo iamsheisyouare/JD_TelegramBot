@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: dev
   datasource:
     url: jdbc:postgresql://localhost:5432/postgres
     username: postgres
@@ -7,6 +9,10 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: sch_employee
+
 
 
 jwt:

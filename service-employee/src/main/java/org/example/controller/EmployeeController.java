@@ -4,11 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.dto.EmplRequest;
 import org.example.dto.EmployeeResponse;
 import org.example.jwt.JwtCreator;
-import org.example.jwt.dto.JwtRequest;
-import org.example.jwt.dto.JwtResponse;
 import org.example.model.Employee;
-import org.example.repository.EmployeeRepository;
-import org.example.service.AuthenticatedUserService;
 import org.example.service.EmployeeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,47 +15,20 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
-//@RequestMapping("empl/auth")
-@RequestMapping("empl")
+@RequestMapping("employee")
 @RequiredArgsConstructor
-public class AuthController {
+public class EmployeeController {
 
     private final JwtCreator jwtCreator;
     private final EmployeeService service;
-    private final AuthenticatedUserService authenticatedUserService;
 
-
-
-    /**
-     * Смена пароля / jwt
-     * @param authRequest
-     * @return
-     */
-    @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
-    @PostMapping("auth")
-    public ResponseEntity<JwtResponse> changeJwt(@RequestBody JwtRequest authRequest) {
-        return service.changeJwt(authRequest,jwtCreator);
-    }
-
-    /**
-     * Создание нового сотрудника.
-     * @param request
-     * @return
-     */
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    @PostMapping("new")
+    @PostMapping
     public ResponseEntity<Employee> create(@RequestBody EmplRequest request) {
         return service.createEmpl(request,jwtCreator);
     }
 
-    /**
-     * Поиск сотрудника по айдишнику.
-     * @param id
-     * @return
-     */
-    //@PreAuthorize("hasRole('ROLE_ADMIN')")
     @PreAuthorize("@authenticatedUserService.hasId(#id) or hasRole('ROLE_ADMIN')")
     @GetMapping("{id}")
     public ResponseEntity<Employee> findById(@PathVariable Long id)
@@ -67,9 +36,8 @@ public class AuthController {
         return service.findById(id);
     }
 
-    //@PreAuthorize("hasRole('ROLE_ADMIN')")
     @PreAuthorize("@authenticatedUserService.hasName(#name) or hasRole('ROLE_ADMIN')")
     @GetMapping("/name/{name}")
-    public ResponseEntity<EmployeeResponse> findByName(@PathVariable String name) {return service.findByName(name);}
-
+    public ResponseEntity<EmployeeResponse> findByName(@PathVariable String name)
+    {return service.findByName(name);}
 }
