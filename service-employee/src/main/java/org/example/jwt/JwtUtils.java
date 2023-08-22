@@ -23,7 +23,7 @@ public final class JwtUtils {
                 collect(Collectors.toList());
         jwtInfoToken.setPrivileges(privileges);
         //jwtInfoToken.setPrivileges(getPrivileges(claims));
-        jwtInfoToken.setFullName(claims.get("firstName", String.class));
+        jwtInfoToken.setFullName(claims.get("fullName", String.class));
         jwtInfoToken.setUsername(claims.getSubject());
         return jwtInfoToken;
     }

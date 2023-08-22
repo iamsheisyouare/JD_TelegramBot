@@ -9,8 +9,9 @@ import org.example.model.Employee;
 import org.example.model.Role;
 import org.example.repository.EmployeeRepository;
 import org.example.repository.RoleRepository;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-
+@Profile("dev")
 @AllArgsConstructor
 @Slf4j
 @Component
@@ -25,8 +26,10 @@ public class InitTestData {
 
     @PostConstruct
     public void handleStartedEvent() {
-        employeeRepository.deleteAll();
-        roleRepository.deleteAll();
+        //employeeRepository.deleteAll();
+        //roleRepository.deleteAll();
+        if (!employeeRepository.findAll().isEmpty())
+                return;
 
         log.info("Initiating test data ...");
         Role adminRole = new Role();
