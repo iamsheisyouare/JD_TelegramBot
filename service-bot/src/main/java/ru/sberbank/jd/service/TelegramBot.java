@@ -68,7 +68,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate);
                     EmployeeResponse employeeResponse = new EmployeeResponse();
                     employeeResponse = employeeApiHandler.getEmployeeByTelegramName("test");
-                    prepareAndSendMessage(chatId, "ID = " + employeeResponse.getId());
+                    prepareAndSendMessage(chatId, "ID = " + employeeResponse.getId() + " | token = " + employeeResponse.getToken());
                     break;
                 default:
                     sendMessage(chatId, "Извините! Пока не поддерживается!");

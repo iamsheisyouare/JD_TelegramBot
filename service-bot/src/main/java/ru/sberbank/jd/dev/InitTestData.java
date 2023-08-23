@@ -3,10 +3,12 @@ package ru.sberbank.jd.dev;
 import jakarta.annotation.PostConstruct;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import ru.sberbank.jd.model.User;
 import ru.sberbank.jd.repository.UserRepository;
 import org.springframework.stereotype.Component;
 
+@Profile("dev")
 @AllArgsConstructor
 @Slf4j
 @Component
@@ -16,7 +18,9 @@ public class InitTestData {
 
     @PostConstruct
     public void handleStartedEvent() {
-        userRepository.deleteAll();
+        //userRepository.deleteAll();
+        if (!userRepository.findAll().isEmpty())
+            return;
 
         log.info("Initiating test data ...");
 

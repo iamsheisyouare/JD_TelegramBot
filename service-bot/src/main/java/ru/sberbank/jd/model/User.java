@@ -1,9 +1,6 @@
 package ru.sberbank.jd.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import ru.sberbank.jd.enums.UserStatus;
@@ -14,19 +11,29 @@ import ru.sberbank.jd.enums.UserStatus;
 @Table(name="TelegramUser")
 public class User {
 
-    public User(){}
+    public User() {
+    }
 
     public User(String telegramName) {
         this.telegramName = telegramName;
         this.status = UserStatus.ACTIVE;
+        this.isDeleted = false;
+    }
+
+    public User(String telegramName, String token) {
+        this.telegramName = telegramName;
+        this.status = UserStatus.ACTIVE;
+        this.isDeleted = false;
+        this.token = token;
     }
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
-    private UserStatus status;
     private String telegramName;
+    private UserStatus status;
     private String token;
+    private Boolean isDeleted;
 
 //    ID	int	табельный номер - ID из схемы Сотрудников из таблицы Employee
 //    telegram_name	varchar	Имя пользователя в телеграм
