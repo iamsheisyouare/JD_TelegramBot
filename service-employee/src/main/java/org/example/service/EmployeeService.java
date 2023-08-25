@@ -75,4 +75,19 @@ public class EmployeeService {
         return ResponseEntity.ok(new EmployeeResponse(empl.getFio(),empl.getId(),empl.getToken()));
     }
 
+    /**
+     * Пользователь логируется в системе
+     * @param authRequest
+     * @param jwtCreator
+     * @return response
+     */
+    public ResponseEntity<JwtResponse> login(JwtRequest authRequest, JwtCreator jwtCreator) {
+        Employee employee = getByName(authRequest.getUsername()).get();
+        final JwtResponse token = jwtCreator.createJwt(authRequest);
+
+        employee.setToken(token.getAccessToken());
+        employeeRepository.save(employee);
+        return ResponseEntity.ok(token);
+    }
+
 }

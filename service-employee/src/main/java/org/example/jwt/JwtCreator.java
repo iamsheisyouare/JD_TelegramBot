@@ -34,7 +34,8 @@ public class JwtCreator {
             throw new AuthException("Неправильный пароль");
         }
         final String accessToken = jwtProvider.generateAccessToken(employee);
-        return new JwtResponse(accessToken, null, request.getUsername());
+        return new JwtResponse(accessToken, request.getUsername());
+        //return new JwtResponse(accessToken, null, request.getUsername());
 
     }
 

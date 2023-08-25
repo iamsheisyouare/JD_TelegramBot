@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+/*
+В НАСТОЯШИЙ МОМЕНТ КОНТРОЛЛЕР НЕ ИСПОЛЬЗУЕТСЯ
 
 
 @RestController
@@ -32,34 +34,21 @@ public class AuthController {
 
 
 
-    /**
-     * Смена пароля / jwt
-     * @param authRequest
-     * @return
-     */
+
     @PreAuthorize("hasAnyRole('ROLE_ADMIN', 'ROLE_USER')")
     @PostMapping("auth")
     public ResponseEntity<JwtResponse> changeJwt(@RequestBody JwtRequest authRequest) {
         return service.changeJwt(authRequest,jwtCreator);
     }
 
-    /**
-     * Создание нового сотрудника.
-     * @param request
-     * @return
-     */
+
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping("new")
     public ResponseEntity<Employee> create(@RequestBody EmplRequest request) {
         return service.createEmpl(request,jwtCreator);
     }
 
-    /**
-     * Поиск сотрудника по айдишнику.
-     * @param id
-     * @return
-     */
-    //@PreAuthorize("hasRole('ROLE_ADMIN')")
+
     @PreAuthorize("@authenticatedUserService.hasId(#id) or hasRole('ROLE_ADMIN')")
     @GetMapping("{id}")
     public ResponseEntity<Employee> findById(@PathVariable Long id)
@@ -73,3 +62,4 @@ public class AuthController {
     public ResponseEntity<EmployeeResponse> findByName(@PathVariable String name) {return service.findByName(name);}
 
 }
+ */

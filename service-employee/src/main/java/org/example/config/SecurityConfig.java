@@ -31,12 +31,10 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(
                         auth -> auth
-                                .requestMatchers(AntPathRequestMatcher.antMatcher("/empl/**")).hasAnyRole("USER")
+                                .requestMatchers(AntPathRequestMatcher.antMatcher("/login/**")).permitAll()
+                                //.requestMatchers(AntPathRequestMatcher.antMatcher("/empl/**")).hasAnyRole("USER")
                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/employee/**")).hasAnyRole("USER")
-                                //.requestMatchers(AntPathRequestMatcher.antMatcher("/h2-console/**")).permitAll()
-                                //.requestMatchers(HttpMethod.GET, "/student/**").hasAnyRole("USER")
-                                // .requestMatchers(HttpMethod.GET, "/class/**").hasAnyRole("USER")
-                                .anyRequest().authenticated()
+                                //.anyRequest().authenticated()
 
                 )
                 .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -45,22 +43,7 @@ public class SecurityConfig {
                 .csrf().disable();
         return http.build();
 
-        /*
-        return http
-                .securityMatcher("/empl/**")
-                .httpBasic().disable()
-                .csrf().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .authorizeHttpRequests(
-                        auth -> auth
-                                .requestMatchers(new AntPathRequestMatcher("/empl/**")
-                                ).permitAll()
-                                .anyRequest().authenticated()
-                                .and()
-                                .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-                ).build();
-                */
+
     }
 
 }
