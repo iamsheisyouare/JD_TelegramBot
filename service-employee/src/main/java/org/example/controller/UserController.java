@@ -1,5 +1,5 @@
 package org.example.controller;
-
+/*
 import lombok.RequiredArgsConstructor;
 import org.example.jwt.JwtCreator;
 import org.example.model.jwt.JwtAuthentication;
@@ -8,6 +8,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+В НАСТОЯШИЙ МОМЕНТ КОНТРОЛЛЕР НЕ ИСПОЛЬЗУЕТСЯ
 
 @RestController
 @RequestMapping("empl")
@@ -31,3 +33,5 @@ public class UserController {
     }
 
 }
+
+ */
