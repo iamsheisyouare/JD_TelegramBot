@@ -6,6 +6,6 @@ import lombok.Setter;
 @Setter
 @Getter
 public class UserRequest {
-    private String telegramName;
-    private String userFIO;
+    private String fio;
+    private String username;
 }

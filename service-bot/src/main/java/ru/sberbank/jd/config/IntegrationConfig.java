@@ -18,4 +18,10 @@ public class IntegrationConfig {
 
     @Value("${integration.vacation.getSuffix}")
     String getSuffixVacation;
+
+    @Value("${integration.adminUser.login}")
+    String adminLogin;
+
+    @Value("${integration.adminUser.password}")
+    String adminPassword;
 }

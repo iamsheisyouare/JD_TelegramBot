@@ -21,7 +21,7 @@ public class UserService {
     }
 
     public ResponseEntity<User> createUser(UserRequest userRequest) {
-        User user = new User(userRequest.getTelegramName());
+        User user = new User(userRequest.getUsername());
         User saved = userRepository.save(user);
         return ResponseEntity.ok(saved);
     }
