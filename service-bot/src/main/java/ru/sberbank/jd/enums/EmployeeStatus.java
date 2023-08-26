@@ -3,9 +3,10 @@ package ru.sberbank.jd.enums;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public enum UserStatus {
-    ACTIVE("ACTIVE"),
-    DELETED("DELETED");
+public enum EmployeeStatus {
+    WORK("WORK"),
+    FIRED("FIRED");
 
     private final String value;
+
 }
