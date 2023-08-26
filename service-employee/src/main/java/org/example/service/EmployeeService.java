@@ -14,6 +14,7 @@ import org.example.model.Employee;
 import org.example.model.Role;
 import org.example.repository.EmployeeRepository;
 import org.example.repository.RoleRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class EmployeeService {
 
     /**
      * Смена jwt
+     *
      * @param authRequest
      * @param jwtCreator
      * @return
@@ -53,41 +55,73 @@ public class EmployeeService {
      * @param jwtCreator
      * @return
      */
-    public ResponseEntity<Employee> createEmpl(EmplRequest request, JwtCreator jwtCreator) {
-        String password = UUID.randomUUID().toString().replace("-", "");
-        Employee employee = new Employee(request.getFio(), request.getUsername(), password);
-        Role userRole = roleRepository.findByRoleName("ROLE_USER").orElse(null);
-        employee.setRoles(List.of(userRole));
-        employee.setToken(jwtCreator.createJwt(employee));
-        Employee saved = employeeRepository.save(employee);
-        return ResponseEntity.ok(saved);
+    public ResponseEntity<EmployeeResponse> createEmpl(EmplRequest request, JwtCreator jwtCreator) {
+        try {
+
+            String password = UUID.randomUUID().toString().replace("-", "");
+            Employee employee = new Employee(request.getFio(), request.getUsername(), password);
+            Role userRole = roleRepository.findByRoleName("ROLE_USER").orElse(null);
+            employee.setRoles(List.of(userRole));
+            employee.setToken(jwtCreator.createJwt(employee));
+            Employee saved = employeeRepository.save(employee);
+            return ResponseEntity.ok(
+                    new EmployeeResponse(saved.getFio(), saved.getId(), saved.getToken(), saved.getStatus()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+
     }
 
-    public ResponseEntity<Employee> findById(Long id)
-    {
-        return ResponseEntity.ok(employeeRepository.findById(id).orElse(null));
+    public ResponseEntity<EmployeeResponse> findById(Long id) {
+        try {
+            Employee empl = employeeRepository.findById(id).orElse(null);
+            if (empl == null) {
+                return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
+            }
+            return ResponseEntity.ok(
+                    new EmployeeResponse(empl.getFio(), empl.getId(), empl.getToken(), empl.getStatus()));
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+
     }
 
-    public ResponseEntity<EmployeeResponse> findByName(String name)
-    {
-        Employee empl= employeeRepository.findByTelegramName(name).orElse(null);
-        if (empl == null) return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
-        return ResponseEntity.ok(new EmployeeResponse(empl.getFio(),empl.getId(),empl.getToken()));
+    public ResponseEntity<EmployeeResponse> findByName(String name) {
+        try {
+            Employee empl = employeeRepository.findByTelegramName(name).orElse(null);
+            if (empl == null) {
+                return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
+            }
+            return ResponseEntity.ok(
+                    new EmployeeResponse(empl.getFio(), empl.getId(), empl.getToken(), empl.getStatus()));
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
     /**
      * Пользователь логируется в системе
+     *
      * @param authRequest
      * @param jwtCreator
      * @return response
      */
-    public ResponseEntity<JwtResponse> login(JwtRequest authRequest, JwtCreator jwtCreator) {
-        Employee employee = getByName(authRequest.getUsername()).get();
-        final JwtResponse token = jwtCreator.createJwt(authRequest);
+    //public ResponseEntity<JwtResponse> login(JwtRequest authRequest, JwtCreator jwtCreator) {
+    public ResponseEntity<EmployeeResponse> login(JwtRequest authRequest, JwtCreator jwtCreator) {
+        try {
+            Employee employee = getByName(authRequest.getUsername()).get();
+            final JwtResponse token = jwtCreator.createJwt(authRequest);
 
-        employee.setToken(token.getAccessToken());
-        employeeRepository.save(employee);
-        return ResponseEntity.ok(token);
+            employee.setToken(token.getAccessToken());
+            Employee saved = employeeRepository.save(employee);
+            return ResponseEntity.ok(
+                    new EmployeeResponse(saved.getFio(), saved.getId(), saved.getToken(), saved.getStatus()));
+        }
+        catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
 }

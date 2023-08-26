@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.example.dto.EmployeeResponse;
 import org.example.jwt.JwtCreator;
 import org.example.jwt.dto.JwtRequest;
 import org.example.jwt.dto.JwtResponse;
@@ -18,7 +19,7 @@ public class LoginController {
 
 
     @PostMapping("login")
-    public ResponseEntity<JwtResponse> login(@RequestBody JwtRequest authRequest) {
+    public ResponseEntity<EmployeeResponse> login(@RequestBody JwtRequest authRequest) {
         return service.login(authRequest,jwtCreator);
     }
 }
