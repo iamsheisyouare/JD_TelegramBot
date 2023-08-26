@@ -35,6 +35,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String userFirstName;
     private String userLastName;
 
+    private String adminToken;
+
     public TelegramBot(BotConfig botConfig, IntegrationConfig integrationConfig, RestTemplate restTemplate) {
         this.botConfig = botConfig;
         this.integrationConfig = integrationConfig;
@@ -66,10 +68,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
             EmployeeResponse employeeResponse = new EmployeeResponse();
+            EmployeeResponse adminResponse = new EmployeeResponse();
 
             telegramName = update.getMessage().getChat().getUserName();
             userFirstName = update.getMessage().getChat().getFirstName();
             userLastName = update.getMessage().getChat().getLastName();
+
+            adminResponse = employeeApiHandler.getAdminInfo();
+            adminToken = adminResponse.getToken();
 
             switch (messageText) {
                 case "/start":
@@ -83,13 +89,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                     prepareAndSendMessage(chatId, "Find by Name | ID = " + employeeResponse.getId() + " | token = " + employeeResponse.getToken());
                     break;
                 case "/userById":
-                    employeeResponse = employeeApiHandler.getEmployeeById(1L);
-                    prepareAndSendMessage(chatId, "Find by ID | ID = " + employeeResponse.getId() + " | token = " + employeeResponse.getToken());
+                    employeeResponse = employeeApiHandler.getEmployeeById(2L);
+                    prepareAndSendMessage(chatId, "Find by ID | ID = " + employeeResponse.getId() + " | name = " + employeeResponse.getName() + " | status = " + employeeResponse.getStatus());
                     break;
                 case "/newUser":
                     String userFIO = userFirstName + " " + userLastName;
-                    employeeApiHandler.createEmployee(telegramName, userFIO);
-                    prepareAndSendMessage(chatId, "Create new Employee");
+                    employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO, adminToken);
+                    prepareAndSendMessage(chatId, "Create new Employee | ID = " + employeeResponse.getId());
                     break;
                 default:
                     sendMessage(chatId, "Извините! Пока не поддерживается!");

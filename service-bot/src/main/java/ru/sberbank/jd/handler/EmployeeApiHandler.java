@@ -2,17 +2,14 @@ package ru.sberbank.jd.handler;
 
 
 import lombok.extern.slf4j.Slf4j;
+import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
 import ru.sberbank.jd.dto.UserRequest;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -84,57 +81,49 @@ public class EmployeeApiHandler {
         }
     }
 
+    public EmployeeResponse getAdminInfo() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        JSONObject authJsonObject = new JSONObject();
+        authJsonObject.put("username", integrationConfig.getAdminLogin());
+        authJsonObject.put("password", integrationConfig.getAdminPassword());
+
+        String url = String.format(integrationConfig.getUrl(), "login");
+
+        HttpEntity<String> req = new HttpEntity<>(authJsonObject.toString(), headers);
+        EmployeeResponse employeeResponse = restTemplate.postForObject(url, req, EmployeeResponse.class);
+        return employeeResponse;
+    }
+
     /**
      * Создает нового сотрудника с указанными данными.
      *
      * @param telegramName имя в Telegram
      * @param userFIO      ФИО пользователя
      */
-    public void createEmployee(String telegramName, String userFIO) {
+    public EmployeeResponse createEmployee(String telegramName, String userFIO, String adminToken) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("Authorization", "Bearer " + token);
 
         UserRequest userRequest = new UserRequest();
-        userRequest.setTelegramName(telegramName);
-        userRequest.setUserFIO(userFIO);
+        userRequest.setUsername(telegramName);
+        userRequest.setFio(userFIO);
 
+        headers.add("Authorization", "Bearer " + adminToken);
         HttpEntity<UserRequest> entity = new HttpEntity<>(userRequest, headers);
-        log.info("Create User Request: " + entity.toString());
         try {
-            restTemplate.exchange(
+            ResponseEntity<EmployeeResponse> response = restTemplate.exchange(
                     String.format(integrationConfig.getUrl(), integrationConfig.getGetSuffixEmployee()),
-                    HttpMethod.PUT,
+                    HttpMethod.POST,
                     entity,
-                    Void.class
+                    EmployeeResponse.class
             );
-        } catch (HttpClientErrorException.Forbidden ex) {
-            // Обрабатываем ошибку 403 (Forbidden)
-            log.error("Ошибка 403: Доступ запрещен! | " + ex);
+            return response.getBody();
         } catch (Exception e) {
             log.error("" + e);
+            return null;
         }
     }
-//    public void createEmployee(String telegramName, String userFIO) {
-//        HttpHeaders headers = new HttpHeaders();
-//        headers.setContentType(MediaType.APPLICATION_JSON);
-//        headers.add("Authorization", "Bearer " + token);
-//        // TODO необходимо использовать UserRequest
-//        Map<String, String> requestBody = new HashMap<>();
-//        requestBody.put("telegramName", telegramName);
-//        requestBody.put("userFIO", userFIO);
-//
-//        HttpEntity<Map<String, String>> entity = new HttpEntity<>(requestBody, headers);
-//        try {
-//            restTemplate.exchange(
-//                    String.format(integrationConfig.getUrl(), integrationConfig.getGetSuffixEmployee()),
-//                    HttpMethod.PUT,
-//                    entity,
-//                    String.class
-//            );
-//        } catch (Exception e) {
-//            log.error("" + e);
-//        }
-//    }
 
 }
