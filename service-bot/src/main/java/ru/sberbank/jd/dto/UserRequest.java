@@ -7,4 +7,5 @@ import lombok.Setter;
 @Getter
 public class UserRequest {
     private String telegramName;
+    private String userFIO;
 }
