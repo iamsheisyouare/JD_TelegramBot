@@ -25,13 +25,13 @@ public class EmployeeController {
 
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<Employee> create(@RequestBody EmplRequest request) {
+    public ResponseEntity<EmployeeResponse> create(@RequestBody EmplRequest request) {
         return service.createEmpl(request,jwtCreator);
     }
 
     @PreAuthorize("@authenticatedUserService.hasId(#id) or hasRole('ROLE_ADMIN')")
     @GetMapping("{id}")
-    public ResponseEntity<Employee> findById(@PathVariable Long id)
+    public ResponseEntity<EmployeeResponse> findById(@PathVariable Long id)
     {
         return service.findById(id);
     }
