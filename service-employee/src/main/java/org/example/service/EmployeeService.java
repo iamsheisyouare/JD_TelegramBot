@@ -3,10 +3,12 @@ package org.example.service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.EmplRequest;
 import org.example.dto.EmployeeResponse;
+import org.example.enums.EmployeeStatus;
 import org.example.jwt.JwtCreator;
 import org.example.jwt.dto.JwtRequest;
 import org.example.jwt.dto.JwtResponse;
@@ -122,6 +124,16 @@ public class EmployeeService {
         catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
+    }
+
+    public ResponseEntity<List<Long>> findByStatus(EmployeeStatus status)
+    {
+        List<Employee> employees =  employeeRepository.findByStatus(status);
+        if(employees==null || employees.isEmpty())
+        {
+            return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
+        }
+        return ResponseEntity.ok(employees.stream().map(e->e.getId()).collect(Collectors.toList()));
     }
 
 }

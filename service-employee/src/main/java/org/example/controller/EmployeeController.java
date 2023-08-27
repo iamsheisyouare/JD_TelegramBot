@@ -1,8 +1,10 @@
 package org.example.controller;
 
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.EmplRequest;
 import org.example.dto.EmployeeResponse;
+import org.example.enums.EmployeeStatus;
 import org.example.jwt.JwtCreator;
 import org.example.model.Employee;
 import org.example.service.EmployeeService;
@@ -40,4 +42,11 @@ public class EmployeeController {
     @GetMapping("/name/{name}")
     public ResponseEntity<EmployeeResponse> findByName(@PathVariable String name)
     {return service.findByName(name);}
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @GetMapping("/status/{status}")
+    public ResponseEntity<List<Long>> findByStatus(@PathVariable EmployeeStatus status)
+    {
+        return service.findByStatus(status);
+    }
 }
