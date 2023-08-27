@@ -6,9 +6,14 @@ spring:
     url: jdbc:postgresql://localhost:5432/testdb
     username: postgres
     password: tyler
-    driver-class-name: org.postgresql.Driver
+#    driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: update
-      default_schema: sch_vacation
+#      default_schema: sch_vacation
+    properties:
+      hibernate:
+        default_schema: sch_vacation
+server:
+  port: 8100
