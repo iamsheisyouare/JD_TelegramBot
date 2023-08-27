@@ -37,13 +37,20 @@ public class ChatJoinRequestHandler {
         log.info("Зашли в проверку ссылки приглашения");
         Long chatId = chatJoinRequest.getChat().getId();
         Long userId = chatJoinRequest.getUser().getId();
+        log.info("string userId = " + userId.toString() + ", chatJoinId = " + chatId + ", telegramBot chatID = " );
 
         BotApiMethodBoolean handleChatJoinRequest;
 
-        if (userName == null ) {
+        if (userName != null ) {
             handleChatJoinRequest = new ApproveChatJoinRequest(chatId.toString(), userId);
             //handleChatJoinRequest = new ApproveChatJoinRequest("@TestTelegramBot", userId);
-
+            try{
+                Boolean result = telegramBot.execute(handleChatJoinRequest);
+                log.info("result = " + result.toString());
+            }
+            catch (TelegramApiException e){
+                log.error("Approve failed: " + e.getMessage());
+            }
             log.info("Approve finish");
 
             // apiClient.storeTgId(userName, userId.toString());    // TODO сохранение в базу что добавлен в чат
