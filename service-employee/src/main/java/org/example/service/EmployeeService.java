@@ -67,7 +67,7 @@ public class EmployeeService {
             employee.setToken(jwtCreator.createJwt(employee));
             Employee saved = employeeRepository.save(employee);
             return ResponseEntity.ok(
-                    new EmployeeResponse(saved.getFio(), saved.getId(), saved.getToken(), saved.getStatus()));
+                    new EmployeeResponse(saved.getTelegramName(), saved.getId(), saved.getToken(), saved.getStatus(),saved.getFio()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
@@ -81,7 +81,7 @@ public class EmployeeService {
                 return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
             }
             return ResponseEntity.ok(
-                    new EmployeeResponse(empl.getFio(), empl.getId(), empl.getToken(), empl.getStatus()));
+                    new EmployeeResponse(empl.getTelegramName(), empl.getId(), empl.getToken(), empl.getStatus(),empl.getFio()));
         }
         catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -96,7 +96,7 @@ public class EmployeeService {
                 return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
             }
             return ResponseEntity.ok(
-                    new EmployeeResponse(empl.getFio(), empl.getId(), empl.getToken(), empl.getStatus()));
+                    new EmployeeResponse(empl.getTelegramName(), empl.getId(), empl.getToken(), empl.getStatus(),empl.getFio()));
         }
         catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
@@ -119,7 +119,7 @@ public class EmployeeService {
             employee.setToken(token.getAccessToken());
             Employee saved = employeeRepository.save(employee);
             return ResponseEntity.ok(
-                    new EmployeeResponse(saved.getFio(), saved.getId(), saved.getToken(), saved.getStatus()));
+                    new EmployeeResponse(saved.getTelegramName(), saved.getId(), saved.getToken(), saved.getStatus(),saved.getFio()));
         }
         catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
