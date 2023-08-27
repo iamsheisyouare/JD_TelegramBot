@@ -10,8 +10,11 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource("application.properties")
 public class IntegrationConfig {
 
-    @Value("${integration.URL}")
-    String url;
+    @Value("${integration.employee.URL}")
+    String employeeUrl;
+
+    @Value("${integration.vacation.URL}")
+    String vacationUrl;
 
     @Value("${integration.employee.getSuffix}")
     String getSuffixEmployee;
