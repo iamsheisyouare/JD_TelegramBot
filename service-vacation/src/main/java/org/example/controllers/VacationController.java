@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -32,6 +31,16 @@ public class VacationController {
             Employee employee = employeeService.getEmployeeByTelegramUsername(vacationRequest.getTelegramUsername());
             if (employee == null) {
                 return ResponseEntity.badRequest().body("Сотрудник не найден");
+            }
+
+            List<Vacation> existingVacations = vacationService.getUpcomingVacationsByEmployeeId(employee.getId());
+            int totalVacationDays = existingVacations.stream()
+                    .mapToInt(vacation -> vacation.getEndDate().getDayOfYear() - vacation.getStartDate().getDayOfYear() + 1)
+                    .sum();
+
+            int newVacationDays = vacationRequest.getEndDate().getDayOfYear() - vacationRequest.getStartDate().getDayOfYear() + 1;
+            if (totalVacationDays + newVacationDays > 28) {
+                return ResponseEntity.badRequest().body("Общая продолжительность отпусков не должна превышать 28 дней");
             }
 
             Vacation vacation = new Vacation();

@@ -1,5 +1,7 @@
 # Настройки подключения к базе данных PostgreSQL
 spring:
+  profiles:
+    active: dev
   datasource:
     url: jdbc:postgresql://localhost:5432/testdb
     username: postgres
@@ -9,3 +11,4 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: update
+      default_schema: sch_vacation

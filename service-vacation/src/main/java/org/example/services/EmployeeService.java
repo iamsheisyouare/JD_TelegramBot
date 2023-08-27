@@ -15,5 +15,8 @@ public class EmployeeService {
     public Employee getEmployeeByTelegramUsername(String telegramUsername) {
         return employeeRepository.findByTelegramUsername(telegramUsername);
     }
+    public void addEmployee(Employee employee) {
+        employeeRepository.save(employee);
+    }
 
 }
