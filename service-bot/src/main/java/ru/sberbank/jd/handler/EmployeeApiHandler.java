@@ -41,7 +41,7 @@ public class EmployeeApiHandler {
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<EmployeeResponse> response = restTemplate.exchange(
-                    String.format(integrationConfig.getUrl(), integrationConfig.getGetSuffixEmployee() + "/name/" + telegramName),
+                    String.format(integrationConfig.getEmployeeUrl(), integrationConfig.getGetSuffixEmployee() + "/name/" + telegramName),
                     //"http://localhost:8001/employee/name/oduvan",
                     HttpMethod.GET,
                     entity,
@@ -68,7 +68,7 @@ public class EmployeeApiHandler {
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<EmployeeResponse> response = restTemplate.exchange(
-                    String.format(integrationConfig.getUrl(), integrationConfig.getGetSuffixEmployee() + "/" + employeeId),
+                    String.format(integrationConfig.getEmployeeUrl(), integrationConfig.getGetSuffixEmployee() + "/" + employeeId),
                     //"http://localhost:8001/employee/name/oduvan",
                     HttpMethod.GET,
                     entity,
@@ -89,7 +89,7 @@ public class EmployeeApiHandler {
         authJsonObject.put("username", integrationConfig.getAdminLogin());
         authJsonObject.put("password", integrationConfig.getAdminPassword());
 
-        String url = String.format(integrationConfig.getUrl(), "login");
+        String url = String.format(integrationConfig.getEmployeeUrl(), "login");
 
         HttpEntity<String> req = new HttpEntity<>(authJsonObject.toString(), headers);
         EmployeeResponse employeeResponse = restTemplate.postForObject(url, req, EmployeeResponse.class);
@@ -114,7 +114,7 @@ public class EmployeeApiHandler {
         HttpEntity<UserRequest> entity = new HttpEntity<>(userRequest, headers);
         try {
             ResponseEntity<EmployeeResponse> response = restTemplate.exchange(
-                    String.format(integrationConfig.getUrl(), integrationConfig.getGetSuffixEmployee()),
+                    String.format(integrationConfig.getEmployeeUrl(), integrationConfig.getGetSuffixEmployee()),
                     HttpMethod.POST,
                     entity,
                     EmployeeResponse.class
