@@ -2,6 +2,7 @@ package ru.sberbank.jd.handler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -59,6 +60,16 @@ public class VacationApiHandler {
                     entity,
                     Map.class
             );
+            //TODO переписать определение response
+            /*
+            ResponseEntity<Map<Long,String>> response = restTemplate.exchange(
+                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation?telegramUsername=" + telegramUsername),
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<Map<Long, String>>() {}
+            );
+            //TODO переписать определение response
+             */
             return ResponseEntity.ok(response.getBody());
         } catch (Exception e) {
             log.error("Error: " + e.getMessage());
