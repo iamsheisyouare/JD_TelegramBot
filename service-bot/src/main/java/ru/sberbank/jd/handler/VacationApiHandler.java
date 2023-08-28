@@ -60,8 +60,8 @@ public class VacationApiHandler {
                     entity,
                     Map.class
             );
-            //TODO переписать определение response
             /*
+            //TODO переписать определение response
             ResponseEntity<Map<Long,String>> response = restTemplate.exchange(
                     String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation?telegramUsername=" + telegramUsername),
                     HttpMethod.GET,
