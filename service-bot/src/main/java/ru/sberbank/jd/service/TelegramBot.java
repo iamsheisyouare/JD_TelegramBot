@@ -14,11 +14,17 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.sberbank.jd.config.BotConfig;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
+import ru.sberbank.jd.enums.BotState;
 import ru.sberbank.jd.handler.ChatJoinRequestHandler;
 import ru.sberbank.jd.handler.EmployeeApiHandler;
 import ru.sberbank.jd.handler.VacationApiHandler;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -54,6 +60,10 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String inviteLink;
 
     private String adminToken;
+
+    private boolean isSelectingVacationToDelete = false;
+    private Map<String, BotState> botStateMap = new HashMap<>();
+    private Map<String, LocalDate> userStartDateMap = new HashMap<>();
 
     public TelegramBot(BotConfig botConfig, IntegrationConfig integrationConfig, RestTemplate restTemplate) {
         this.botConfig = botConfig;
@@ -91,6 +101,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             EmployeeResponse adminResponse = new EmployeeResponse();
             VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
 
+//             Проверка состояний пользователя
+            if (botStateMap.containsKey(telegramName)) {
+                handleUserState(chatId, telegramName, messageText);
+                return; // Важно вернуться после обработки состояния пользователя
+            }
+
             telegramName = update.getMessage().getChat().getUserName();
             userFirstName = update.getMessage().getChat().getFirstName();
             userLastName = update.getMessage().getChat().getLastName();
@@ -101,6 +117,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             // TODO здесь брать не админский токен всегда а берем токен пользователя и передаем для создания нового - если тот не админ, то не сможет создать
 
             switch (messageText) {
+
                 case "/start":
                     startCommandReceived(chatId, telegramName);
                     break;
@@ -126,6 +143,32 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/vacations":
                     String vacationsMessage = vacationApiHandler.handleVacationsCommand(telegramName);
                     prepareAndSendMessage(chatId, vacationsMessage);
+                    break;
+                case "/new_vacation":
+                    prepareAndSendMessage(chatId, "Введите дату начала отпуска в формате dd.MM.yyyy:");
+                    botStateMap.put(telegramName, BotState.WAITING_START_DATE);
+                    break;
+                case "/delete_vacation":
+                    ReplyKeyboardMarkup keyboardMarkup = vacationApiHandler.getVacationButtons(telegramName);
+                    if (keyboardMarkup != null) {
+                        prepareAndSendKeyboard(chatId, "Выберите отпуск для удаления:", keyboardMarkup);
+                        isSelectingVacationToDelete = true;
+                    } else {
+                        sendMessage(chatId, "Нет доступных отпусков для удаления.");
+                    }
+                    break;
+                case "Выберите отпуск для удаления:":
+                    if (isSelectingVacationToDelete) {
+                        String buttonText = update.getMessage().getText();
+                        Long vacationId = vacationApiHandler.getVacationIdByText(buttonText, telegramName);
+                        if (vacationId != null) {
+                            String deleteVacationMessage = vacationApiHandler.handleDeleteVacationCommand(telegramName, vacationId);
+                            prepareAndSendMessage(chatId, deleteVacationMessage);
+                        } else {
+                            sendMessage(chatId, "Ошибка при выборе отпуска.");
+                        }
+                        isSelectingVacationToDelete = false;
+                    }
                     break;
                 default:
                     sendMessage(chatId, "Извините! Пока не поддерживается!");
@@ -175,10 +218,69 @@ public class TelegramBot extends TelegramLongPollingBot {
         message.setText(textToSend);
         executeMessage(message);
     }
+    private void prepareAndSendKeyboard(long chatId, String textToSend, ReplyKeyboardMarkup keyboardMarkup) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(textToSend);
+        message.setReplyMarkup(keyboardMarkup);
+        executeMessage(message);
+    }
 
     private void sendInviteLink(long chatId) {
         SendMessage message = new SendMessage();
         prepareAndSendMessage(chatId, "Привет! Вступите в чат сотрудников по ссылке: " + inviteLink);
+    }
+
+    private void handleUserState(long chatId, String telegramName, String messageText) {
+        BotState currentState = botStateMap.get(telegramName);
+
+        switch (currentState) {
+            case WAITING_START_DATE:
+                handleStartDateInput(chatId, telegramName, messageText);
+            break;
+            case WAITING_END_DATE:
+                handleEndDateInput(chatId, telegramName, messageText);
+            break;
+        }
+    }
+
+    private void handleStartDateInput(long chatId, String telegramName, String messageText) {
+        LocalDate startDate;
+        try {
+            startDate = LocalDate.parse(messageText, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        } catch (DateTimeParseException e) {
+            prepareAndSendMessage(chatId, "Некорректный формат даты. Попробуйте еще раз.");
+            return;
+        }
+
+        prepareAndSendMessage(chatId, "Введите дату окончания отпуска в формате dd.MM.yyyy:");
+        // Обновляем состояние бота для ожидания даты окончания отпуска
+        botStateMap.put(telegramName, BotState.WAITING_END_DATE);
+
+        // Сохраняем дату начала отпуска в мапе или как-то еще, в зависимости от вашей логики
+        userStartDateMap.put(telegramName, startDate);
+    }
+
+    private void handleEndDateInput(long chatId, String telegramName, String messageText) {
+        LocalDate endDate;
+        try {
+            endDate = LocalDate.parse(messageText, DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+        } catch (DateTimeParseException e) {
+            prepareAndSendMessage(chatId, "Некорректный формат даты. Попробуйте еще раз.");
+            return;
+        }
+
+        // Получаем сохраненную дату начала отпуска
+        LocalDate savedStartDate = userStartDateMap.get(telegramName);
+
+        // Обработка дат начала и окончания отпуска...
+        VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
+        String addVacationResponse = vacationApiHandler.addVacation(telegramName, savedStartDate, endDate);
+        prepareAndSendMessage(chatId, addVacationResponse);
+
+        // Убираем состояние из мапы, так как диалог закончен
+        botStateMap.remove(telegramName);
+        userStartDateMap.remove(telegramName);
     }
 
 

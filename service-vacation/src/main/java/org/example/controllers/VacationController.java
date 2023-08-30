@@ -43,6 +43,13 @@ public class VacationController {
                 return ResponseEntity.badRequest().body("Общая продолжительность отпусков не должна превышать 28 дней");
             }
 
+            // Форматирование дат в нужный формат YYYY-MM-dd
+//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+//            String formattedStartDate = vacationRequest.getStartDate().format(formatter);
+//            String formattedEndDate = vacationRequest.getEndDate().format(formatter);
+//            vacation.setStartDate(LocalDate.parse(formattedStartDate));
+//            vacation.setEndDate(LocalDate.parse(formattedEndDate));
+
             Vacation vacation = new Vacation();
             vacation.setEmployee(employee);
             vacation.setStartDate(vacationRequest.getStartDate());
