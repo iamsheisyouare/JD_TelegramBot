@@ -84,11 +84,11 @@ public class EmployeeApiHandler {
         }
     }
 
-    public List<Long> getEmployeeListWithStatus(EmployeeStatus status, String adminToken) {
+    public List<Long> getEmployeeListWithStatus(EmployeeStatus status/*, String adminToken*/) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("Authorization", "Bearer " + adminToken);
+        headers.add("Authorization", "Bearer " + token);
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<Long[]> response = restTemplate.exchange(
@@ -129,7 +129,7 @@ public class EmployeeApiHandler {
      * @param telegramName имя в Telegram
      * @param userFIO      ФИО пользователя
      */
-    public EmployeeResponse createEmployee(String telegramName, String userFIO, String adminToken) {
+    public EmployeeResponse createEmployee(String telegramName, String userFIO/*, String adminToken*/) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -137,7 +137,7 @@ public class EmployeeApiHandler {
         userRequest.setUsername(telegramName);
         userRequest.setFio(userFIO);
 
-        headers.add("Authorization", "Bearer " + adminToken);
+        headers.add("Authorization", "Bearer " + token /*adminToken*/);
         HttpEntity<UserRequest> entity = new HttpEntity<>(userRequest, headers);
         try {
             ResponseEntity<EmployeeResponse> response = restTemplate.exchange(

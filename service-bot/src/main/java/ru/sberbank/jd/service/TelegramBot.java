@@ -133,9 +133,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
                 case "/newUser":        // TODO сделать создание под админом и фио передавать не из чата а запрашивать
                     String userFIO = userFirstName + " " + userLastName;
-                    employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO, adminToken);
-                    var user = userService.setEmployeeInfo(telegramName, employeeResponse.getToken(), employeeResponse.getId());
-                    prepareAndSendMessage(chatId, "Create new Employee | ID = " + employeeResponse.getId());
+                    employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO);      // adminToken
+                    if (employeeResponse != null) {
+                        var user = userService.setEmployeeInfo(telegramName, employeeResponse.getToken(), userId, employeeResponse.getId());
+                        prepareAndSendMessage(chatId, "Create new Employee | ID = " + employeeResponse.getId());
+                    } else {
+                        prepareAndSendMessage(chatId, "Сотрудник не был создан! У вас не хватает прав!");
+                    }
                     break;
                 case "/vacations":
                     String vacationsMessage = vacationApiHandler.handleVacationsCommand(telegramName);

@@ -34,6 +34,15 @@ public class User {
         this.telegramUserId = telegramUserId;
     }
 
+    public User(String telegramName, String token, Long telegramUserId, Long employeeId) {
+        this.telegramName = telegramName;
+        this.token = token;
+        this.status = UserStatus.ACTIVE;
+        this.isDeleted = false;
+        this.telegramUserId = telegramUserId;
+        this.employeeId = employeeId;
+    }
+
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;

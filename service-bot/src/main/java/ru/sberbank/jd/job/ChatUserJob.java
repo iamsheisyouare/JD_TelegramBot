@@ -16,6 +16,7 @@ import ru.sberbank.jd.enums.EmployeeStatus;
 import ru.sberbank.jd.enums.UserStatus;
 import ru.sberbank.jd.handler.EmployeeApiHandler;
 import ru.sberbank.jd.service.TelegramBot;
+import ru.sberbank.jd.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +24,9 @@ import java.util.List;
 @Slf4j
 @Service
 public class ChatUserJob {
+
+    @Autowired
+    UserService userService;
 
     @Autowired
     TelegramBot telegramBot;
@@ -33,30 +37,40 @@ public class ChatUserJob {
     @Scheduled(fixedDelayString = "${job.scheduler.interval}")
     public void actualizeChatUsers() {
         log.info("Старт проверки актуальности пользователей чата сотрудников");
-        List<Long> employeeIdList = employeeApiHandler.getEmployeeListWithStatus(EmployeeStatus.WORK, employeeApiHandler.getAdminInfo().getToken());
+        List<Long> employeeIdList = employeeApiHandler.getEmployeeListWithStatus(EmployeeStatus.FIRED);     // TODO список со статусами
         if (employeeIdList != null) {
             employeeIdList.forEach(employeeId -> {
                 if (employeeId != null && telegramBot.getChatIdSet() != null) {
                     telegramBot.getChatIdSet().forEach(chatId -> {
                         if (Long.parseLong(chatId) < 0) {
                             UserStatus userStatus = null;
-                            GetChatMember getChatMember = new GetChatMember(chatId, employeeId);
+                            Long userId = null;
+                            try {
+                                userId = userService.getByEmployeeId(employeeId).get().getTelegramUserId();
+                            }
+                            catch (Exception e) {
+                                log.error("Не получилось определить userID по employeeId: " + e);
+                                return;
+                            }
+                            GetChatMember getChatMember = new GetChatMember(chatId, userId);
                             try {
                                 ChatMember chatMember = telegramBot.execute(getChatMember);
                                 if (chatMember != null) {
                                     BotApiMethodBoolean chatMemberChangeStatus = null;
-                                    if ("kicked".equals(chatMember.getStatus())) {
-                                        userStatus = UserStatus.ACTIVE;
-                                        chatMemberChangeStatus = new UnbanChatMember(chatId, employeeId);       // TODO здесь надо передавать не наши внутренние ид сотрудников а ид юзера телеги
-                                    } else if (!"kicked".equals(chatMember.getStatus())) {
-                                        userStatus = UserStatus.ACTIVE;
-                                        chatMemberChangeStatus = new BanChatMember(chatId, employeeId);
+                                    if (!"kicked".equals(chatMember.getStatus())) {
+                                        userStatus = UserStatus.DELETED;
+                                        userService.setStatus(employeeId, userStatus);
+                                        chatMemberChangeStatus = new BanChatMember(chatId, userId);
                                     }
+//                                    else if ("kicked".equals(chatMember.getStatus())) {
+//                                        userStatus = UserStatus.ACTIVE;
+//                                        chatMemberChangeStatus = new UnbanChatMember(chatId, userId);       // TODO здесь надо передавать не наши внутренние ид сотрудников а ид юзера телеги
+//                                    }
                                     if (chatMemberChangeStatus != null) {
                                         try {
                                             telegramBot.execute(chatMemberChangeStatus);
                                             if (chatMemberChangeStatus instanceof BanChatMember) {
-                                                telegramBot.prepareAndSendMessage(Long.parseLong(chatId), "Вы удалены из чата сотрудников.");
+                                                telegramBot.prepareAndSendMessage(Long.parseLong(chatId), "Вы удалены из чата сотрудников.");   // TODO переделать на отправку в чат сотрудника, а не общий
                                             }
                                             log.info(LocalDateTime.now() + ": Изменение статуса сотрудника на " + userStatus.toString());
                                         } catch (TelegramApiException e) {

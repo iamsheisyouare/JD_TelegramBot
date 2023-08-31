@@ -24,7 +24,7 @@ public class InitTestData {
 
         log.info("Initiating test data ...");
 
-        var user = new User("Oduvan", 61241281L);
+        var user = new User("Oduvan", null,61241281L, 1L);
         userRepository.save(user);
         log.info("user added '{}'", user);
     }
