@@ -10,6 +10,9 @@ import org.springframework.web.client.RestTemplate;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
 import ru.sberbank.jd.dto.UserRequest;
+import ru.sberbank.jd.enums.EmployeeStatus;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -75,6 +78,30 @@ public class EmployeeApiHandler {
                     EmployeeResponse.class
             );
             return response.getBody();
+        } catch (Exception e) {
+            log.error("" + e);
+            return null;
+        }
+    }
+
+    public List<Long> getEmployeeListWithStatus(EmployeeStatus status, String adminToken) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("Authorization", "Bearer " + adminToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<Long[]> response = restTemplate.exchange(
+                    String.format(integrationConfig.getEmployeeUrl(), integrationConfig.getGetSuffixEmployee() + "/status/" + status),
+                    HttpMethod.GET,
+                    entity,
+                    Long[].class
+            );
+            List<Long> employeeIdList = null;
+            if (response.getBody() != null) {
+                employeeIdList = List.of(response.getBody());
+            }
+            return employeeIdList;
         } catch (Exception e) {
             log.error("" + e);
             return null;

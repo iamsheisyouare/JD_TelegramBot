@@ -27,6 +27,13 @@ public class User {
         this.token = token;
     }
 
+    public User(String telegramName, Long telegramUserId) {
+        this.telegramName = telegramName;
+        this.status = UserStatus.ACTIVE;
+        this.isDeleted = false;
+        this.telegramUserId = telegramUserId;
+    }
+
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
@@ -34,6 +41,8 @@ public class User {
     private UserStatus status;
     private String token;
     private Boolean isDeleted;
+    private Long telegramUserId;
+    private Long employeeId;
 
 //    ID	int	табельный номер - ID из схемы Сотрудников из таблицы Employee
 //    telegram_name	varchar	Имя пользователя в телеграм

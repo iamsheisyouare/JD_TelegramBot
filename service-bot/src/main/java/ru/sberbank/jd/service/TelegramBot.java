@@ -1,15 +1,15 @@
 package ru.sberbank.jd.service;
 
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodBoolean;
+import org.telegram.telegrambots.meta.api.methods.groupadministration.BanChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.sberbank.jd.config.BotConfig;
 import ru.sberbank.jd.config.IntegrationConfig;
@@ -17,10 +17,14 @@ import ru.sberbank.jd.dto.EmployeeResponse;
 import ru.sberbank.jd.handler.ChatJoinRequestHandler;
 import ru.sberbank.jd.handler.EmployeeApiHandler;
 import ru.sberbank.jd.handler.VacationApiHandler;
+import ru.sberbank.jd.model.User;
+import ru.sberbank.jd.repository.UserRepository;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 @Slf4j
+@Getter
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
@@ -46,6 +50,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     static final String ERROR_TEXT = "Error occurred: ";
     private final RestTemplate restTemplate;
+    private final UserService userService;
+    private final UserRepository userRepository;
+
+    private Set<String> chatIdSet = new HashSet<>();
 
     private String telegramName;
     private String userFirstName;
@@ -55,11 +63,14 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private String adminToken;
 
-    public TelegramBot(BotConfig botConfig, IntegrationConfig integrationConfig, RestTemplate restTemplate) {
+    public TelegramBot(BotConfig botConfig, IntegrationConfig integrationConfig, RestTemplate restTemplate, UserService userService, UserRepository userRepository) {
         this.botConfig = botConfig;
         this.integrationConfig = integrationConfig;
         this.restTemplate = restTemplate;
         this.inviteLink = botConfig.getInviteLink();
+        this.userService = userService;
+        this.userRepository = userRepository;
+        this.chatIdSet.add(botConfig.getEmployeeChatId().toString());
     }
 
     /**
@@ -81,10 +92,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Override
     public void onUpdateReceived(Update update) {
 
-        long chatId;
+        Long chatId = null;
+        long userId;
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             chatId = update.getMessage().getChatId();
+            userId = update.getMessage().getFrom().getId();
 
             EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
             EmployeeResponse employeeResponse = new EmployeeResponse();
@@ -102,7 +115,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             switch (messageText) {
                 case "/start":
-                    startCommandReceived(chatId, telegramName);
+                    startCommandReceived(chatId, telegramName, userId);
                     break;
                 case "/help":
                     prepareAndSendMessage(chatId, HELP_TEXT);
@@ -118,14 +131,18 @@ public class TelegramBot extends TelegramLongPollingBot {
                     employeeResponse = employeeApiHandler.getEmployeeById(2L);
                     prepareAndSendMessage(chatId, "Find by ID | ID = " + employeeResponse.getId() + " | name = " + employeeResponse.getName() + " | status = " + employeeResponse.getStatus());
                     break;
-                case "/newUser":
+                case "/newUser":        // TODO сделать создание под админом и фио передавать не из чата а запрашивать
                     String userFIO = userFirstName + " " + userLastName;
                     employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO, adminToken);
+                    var user = userService.setEmployeeInfo(telegramName, employeeResponse.getToken(), employeeResponse.getId());
                     prepareAndSendMessage(chatId, "Create new Employee | ID = " + employeeResponse.getId());
                     break;
                 case "/vacations":
                     String vacationsMessage = vacationApiHandler.handleVacationsCommand(telegramName);
                     prepareAndSendMessage(chatId, vacationsMessage);
+                    break;
+                case "/banUser":
+                    banUser("@TestTelegramBot", userId);
                     break;
                 default:
                     sendMessage(chatId, "Извините! Пока не поддерживается!");
@@ -137,12 +154,35 @@ public class TelegramBot extends TelegramLongPollingBot {
             ChatJoinRequestHandler chatJoinRequestHandler = new ChatJoinRequestHandler();
             chatJoinRequestHandler.processChatJoinRequest(this, chatJoinRequest);
         }
+        if (chatId != null) {
+            chatIdSet.add(chatId.toString());
+        }
+    }
+
+    private void banUser(String chatId, long userID) {
+        BotApiMethodBoolean chatMemberBanOrUnban = null;        // TODO переименовать
+        userID = 1920004508L;
+        chatId = "-1001917485473";
+        chatMemberBanOrUnban = new BanChatMember(chatId, userID);
+        log.info("ban user id = " + userID + ", chat id = " + chatId + " result = " + chatMemberBanOrUnban.toString());
+
+        try{
+             Boolean result = execute(chatMemberBanOrUnban);
+             log.info("result = " + result.toString());
+        }
+        catch (TelegramApiException e){
+            log.error(ERROR_TEXT + e.getMessage());
+        }
     }
 
 
-    private void startCommandReceived(long chatId, String name) {
+    private void startCommandReceived(long chatId, String name, long userId) {
         String answer = "Привет, " + name + ", рад приветствовать тебя в боте!";
         //log.info("Replied to user " + name );
+        if (userService.getByTelegramName(name).isEmpty()){
+            var user = new User(name, userId);
+            userRepository.save(user);
+        }
 
         sendMessage(chatId, answer);
     }
@@ -169,7 +209,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void prepareAndSendMessage(long chatId, String textToSend){
+    public void prepareAndSendMessage(long chatId, String textToSend){
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(textToSend);
