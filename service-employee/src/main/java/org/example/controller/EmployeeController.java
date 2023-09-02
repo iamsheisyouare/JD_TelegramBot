@@ -1,6 +1,7 @@
 package org.example.controller;
 
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.example.dto.EmplRequest;
 import org.example.dto.EmployeeResponse;
@@ -48,5 +49,12 @@ public class EmployeeController {
     public ResponseEntity<List<Long>> findByStatus(@PathVariable EmployeeStatus status)
     {
         return service.findByStatus(status);
+    }
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @GetMapping("/status")
+    public ResponseEntity<Map<Long,EmployeeStatus>> findAllWithStatus()
+    {
+        return service.findAllWithStatus();
+
     }
 }
