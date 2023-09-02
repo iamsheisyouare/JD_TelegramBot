@@ -1,6 +1,8 @@
 package org.example.service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -67,7 +69,8 @@ public class EmployeeService {
             employee.setToken(jwtCreator.createJwt(employee));
             Employee saved = employeeRepository.save(employee);
             return ResponseEntity.ok(
-                    new EmployeeResponse(saved.getTelegramName(), saved.getId(), saved.getToken(), saved.getStatus(),saved.getFio()));
+                    new EmployeeResponse(saved.getTelegramName(), saved.getId(), saved.getToken(), saved.getStatus(),
+                            saved.getFio()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
@@ -81,9 +84,9 @@ public class EmployeeService {
                 return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
             }
             return ResponseEntity.ok(
-                    new EmployeeResponse(empl.getTelegramName(), empl.getId(), empl.getToken(), empl.getStatus(),empl.getFio()));
-        }
-        catch (Exception e) {
+                    new EmployeeResponse(empl.getTelegramName(), empl.getId(), empl.getToken(), empl.getStatus(),
+                            empl.getFio()));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
@@ -96,9 +99,9 @@ public class EmployeeService {
                 return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
             }
             return ResponseEntity.ok(
-                    new EmployeeResponse(empl.getTelegramName(), empl.getId(), empl.getToken(), empl.getStatus(),empl.getFio()));
-        }
-        catch (Exception e) {
+                    new EmployeeResponse(empl.getTelegramName(), empl.getId(), empl.getToken(), empl.getStatus(),
+                            empl.getFio()));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
@@ -119,21 +122,39 @@ public class EmployeeService {
             employee.setToken(token.getAccessToken());
             Employee saved = employeeRepository.save(employee);
             return ResponseEntity.ok(
-                    new EmployeeResponse(saved.getTelegramName(), saved.getId(), saved.getToken(), saved.getStatus(),saved.getFio()));
-        }
-        catch (Exception e) {
+                    new EmployeeResponse(saved.getTelegramName(), saved.getId(), saved.getToken(), saved.getStatus(),
+                            saved.getFio()));
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
-    public ResponseEntity<List<Long>> findByStatus(EmployeeStatus status)
-    {
-        List<Employee> employees =  employeeRepository.findByStatus(status);
-        if(employees==null || employees.isEmpty())
-        {
-            return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
+    public ResponseEntity<List<Long>> findByStatus(EmployeeStatus status) {
+        try {
+            List<Employee> employees = employeeRepository.findByStatus(status);
+            if (employees == null || employees.isEmpty()) {
+                return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
+            }
+            return ResponseEntity.ok(employees.stream().map(e -> e.getId()).collect(Collectors.toList()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-        return ResponseEntity.ok(employees.stream().map(e->e.getId()).collect(Collectors.toList()));
+
+    }
+
+
+    public ResponseEntity<Map<Long, EmployeeStatus>> findAllWithStatus() {
+        try {
+            List<Employee> employees = employeeRepository.findAll();
+            if (employees.isEmpty()) {
+                return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(null);
+            }
+            return ResponseEntity.ok(employees.stream()
+                    .collect(Collectors.toMap(Employee::getId, Employee::getStatus)));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+
     }
 
 }
