@@ -46,6 +46,12 @@ public class InitTestData {
         empl.setToken(jwtCreator.createJwt(empl));
         employeeRepository.save(empl);
         log.info("user added '{}'", empl);
+
+        empl = new Employee("Mikhail Dudin","iamheisyouare","123456");
+        empl.setRoles(List.of(userRole));
+        empl.setToken(jwtCreator.createJwt(empl));
+        employeeRepository.save(empl);
+        log.info("user added '{}'", empl);
     }
 
 }

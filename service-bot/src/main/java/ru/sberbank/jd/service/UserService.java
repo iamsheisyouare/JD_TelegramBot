@@ -20,10 +20,36 @@ public class UserService {
         return userRepository.findByTelegramName(telegramName);
     }
 
+    public Optional<User> getByEmployeeId(@NonNull Long getByEmployeeId) {
+        return userRepository.findByEmployeeId(getByEmployeeId);
+    }
+
     public ResponseEntity<User> createUser(UserRequest userRequest) {
         User user = new User(userRequest.getUsername());
         User saved = userRepository.save(user);
         return ResponseEntity.ok(saved);
+    }
+
+    public User createNewUser(String telegramName, String token, Long telegramUserId, Long employeeId) {
+        User user = new User(telegramName, token, telegramUserId, employeeId);
+        User saved = userRepository.save(user);
+        return saved;
+    }
+
+    public User setEmployeeInfo(String telegramName, String token, Long telegramUserId, Long employeeId) {
+
+        if (getByTelegramName(telegramName).isPresent()){
+            User user = getByTelegramName(telegramName).get();
+            user.setToken(token);
+            user.setEmployeeId(employeeId);
+            User saved = userRepository.save(user);
+            return saved;
+        }
+        else{
+            User user = createNewUser(telegramName, token, telegramUserId, employeeId);
+            User saved = userRepository.save(user);
+            return saved;
+        }
     }
 
     public ResponseEntity<User> findById(Long id)
