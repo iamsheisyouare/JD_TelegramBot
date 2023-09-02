@@ -28,12 +28,8 @@ public class VacationController {
     @PostMapping("/vacation")
     public ResponseEntity<String> addVacation(@RequestBody VacationRequest vacationRequest) {
         try {
-            Employee employee = employeeService.getEmployeeByTelegramUsername(vacationRequest.getTelegramUsername());
-            if (employee == null) {
-                return ResponseEntity.badRequest().body("Сотрудник не найден");
-            }
 
-            List<Vacation> existingVacations = vacationService.getUpcomingVacationsByEmployeeId(employee.getId());
+            List<Vacation> existingVacations = vacationService.getUpcomingVacationsByEmployeeId(vacationRequest.getEmployeeId());
             int totalVacationDays = existingVacations.stream()
                     .mapToInt(vacation -> vacation.getEndDate().getDayOfYear() - vacation.getStartDate().getDayOfYear() + 1)
                     .sum();
@@ -51,7 +47,7 @@ public class VacationController {
 //            vacation.setEndDate(LocalDate.parse(formattedEndDate));
 
             Vacation vacation = new Vacation();
-            vacation.setEmployee(employee);
+            vacation.setEmployeeId(vacationRequest.getEmployeeId());
             vacation.setStartDate(vacationRequest.getStartDate());
             vacation.setEndDate(vacationRequest.getEndDate());
 

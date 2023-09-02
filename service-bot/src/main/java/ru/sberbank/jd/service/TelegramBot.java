@@ -10,6 +10,7 @@ import org.telegram.telegrambots.meta.api.methods.groupadministration.BanChatMem
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.sberbank.jd.config.BotConfig;
 import ru.sberbank.jd.config.IntegrationConfig;
@@ -25,7 +26,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
@@ -65,6 +65,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private String telegramName;
     private String userFirstName;
     private String userLastName;
+
+    private Long employeeId;
 
     private String inviteLink;
 
@@ -316,12 +318,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             return;
         }
 
+        employeeId = userService.getByTelegramName(telegramName).get().getEmployeeId();     // TODO сделать красиво
+
         // Получаем сохраненную дату начала отпуска
         LocalDate savedStartDate = userStartDateMap.get(telegramName);
 
         // Обработка дат начала и окончания отпуска...
         VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
-        String addVacationResponse = vacationApiHandler.addVacation(telegramName, savedStartDate, endDate);
+        String addVacationResponse = vacationApiHandler.addVacation(employeeId, savedStartDate, endDate);
         prepareAndSendMessage(chatId, addVacationResponse);
 
         // Убираем состояние из мапы, так как диалог закончен

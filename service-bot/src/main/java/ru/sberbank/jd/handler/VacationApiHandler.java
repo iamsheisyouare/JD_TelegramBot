@@ -92,7 +92,7 @@ public class VacationApiHandler {
         }
     }
 
-    public String addVacation(String telegramUsername, LocalDate startDate, LocalDate endDate) {
+    public String addVacation(Long employeeId, LocalDate startDate, LocalDate endDate) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -102,7 +102,7 @@ public class VacationApiHandler {
         String formattedEndDate = endDate.format(formatter);
 
         Map<String, Object> requestMap = new HashMap<>();
-        requestMap.put("telegramUsername", telegramUsername);
+        requestMap.put("employeeId", employeeId);
         requestMap.put("startDate", formattedStartDate);
         requestMap.put("endDate", formattedEndDate);
 
