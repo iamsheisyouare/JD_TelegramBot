@@ -5,7 +5,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import ru.sberbank.jd.dto.UserRequest;
-import ru.sberbank.jd.enums.UserStatus;
 import ru.sberbank.jd.model.User;
 import ru.sberbank.jd.repository.UserRepository;
 
@@ -51,13 +50,6 @@ public class UserService {
             User saved = userRepository.save(user);
             return saved;
         }
-    }
-
-    public User setStatus(Long employeeId, UserStatus status) {
-        User user = getByEmployeeId(employeeId).get();      // TODO сделать правильное получение с ifPresent
-        user.setStatus(status);
-        User saved = userRepository.save(user);
-        return saved;
     }
 
     public ResponseEntity<User> findById(Long id)
