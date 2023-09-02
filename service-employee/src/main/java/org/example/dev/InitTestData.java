@@ -41,7 +41,7 @@ public class InitTestData {
         userRole.setRoleName(ROLE_USER);
         roleRepository.save(userRole);
 
-        var empl = new Employee("Vasay Pupkin","oduvan","password");
+        var empl = new Employee("Dmitry Gusenkov","Oduvan","password");
         empl.setRoles(List.of(adminRole,userRole));
         empl.setToken(jwtCreator.createJwt(empl));
         employeeRepository.save(empl);
