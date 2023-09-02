@@ -20,6 +20,7 @@ import ru.sberbank.jd.service.UserService;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -37,11 +38,11 @@ public class ChatUserJob {
     @Scheduled(fixedDelayString = "${job.scheduler.interval}")
     public void actualizeChatUsers() {
         log.info("Старт проверки актуальности пользователей чата сотрудников");
-        List<Long> employeeIdList = employeeApiHandler.getEmployeeListWithStatus(EmployeeStatus.FIRED);     // TODO список со статусами
-        if (employeeIdList != null) {
-            employeeIdList.forEach(employeeId -> {
+        Map<Long, EmployeeStatus> employeeList = employeeApiHandler.getListEmployeeAndStatus();
+        if (employeeList != null) {
+            employeeList.forEach((employeeId, status) -> {
                 if (employeeId != null && telegramBot.getChatIdSet() != null) {
-                    telegramBot.getChatIdSet().forEach(chatId -> {
+                    telegramBot.getChatIdSet().forEach(chatId -> {          // TODO убрать перебор чатов - ходим по одному
                         if (Long.parseLong(chatId) < 0) {
                             UserStatus userStatus = null;
                             Long userId = null;
@@ -57,22 +58,27 @@ public class ChatUserJob {
                                 ChatMember chatMember = telegramBot.execute(getChatMember);
                                 if (chatMember != null) {
                                     BotApiMethodBoolean chatMemberChangeStatus = null;
-                                    if (!"kicked".equals(chatMember.getStatus())) {
+                                    if (!"kicked".equals(chatMember.getStatus()) && status.equals(EmployeeStatus.FIRED)) {
                                         userStatus = UserStatus.DELETED;
                                         userService.setStatus(employeeId, userStatus);
                                         chatMemberChangeStatus = new BanChatMember(chatId, userId);
                                     }
-//                                    else if ("kicked".equals(chatMember.getStatus())) {
-//                                        userStatus = UserStatus.ACTIVE;
-//                                        chatMemberChangeStatus = new UnbanChatMember(chatId, userId);       // TODO здесь надо передавать не наши внутренние ид сотрудников а ид юзера телеги
-//                                    }
+                                    else if ("kicked".equals(chatMember.getStatus()) && status.equals(EmployeeStatus.WORK)) {
+                                        userStatus = UserStatus.ACTIVE;
+                                        userService.setStatus(employeeId, userStatus);
+                                        chatMemberChangeStatus = new UnbanChatMember(chatId, userId);
+                                    } else {
+                                        userStatus = UserStatus.DELETED;
+                                        userService.setStatus(employeeId, userStatus);
+                                        chatMemberChangeStatus = new BanChatMember(chatId, userId);
+                                    }
                                     if (chatMemberChangeStatus != null) {
                                         try {
                                             telegramBot.execute(chatMemberChangeStatus);
                                             if (chatMemberChangeStatus instanceof BanChatMember) {
-                                                telegramBot.prepareAndSendMessage(Long.parseLong(chatId), "Вы удалены из чата сотрудников.");   // TODO переделать на отправку в чат сотрудника, а не общий
+                                                telegramBot.prepareAndSendMessage(userId, "Вы удалены из чата сотрудников.");   // TODO переделать на отправку в чат сотрудника, а не общий
                                             }
-                                            log.info(LocalDateTime.now() + ": Изменение статуса сотрудника на " + userStatus.toString());
+                                            log.info(LocalDateTime.now() + ": Изменение статуса сотрудника с ID = " + employeeId + " на " + userStatus.toString());
                                         } catch (TelegramApiException e) {
                                             log.error("Не удалось изменить статус сотрудника: " + e);
                                         }

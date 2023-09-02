@@ -109,8 +109,8 @@ public class TelegramBot extends TelegramLongPollingBot {
             userLastName = update.getMessage().getChat().getLastName();
 
             // TODO вынести выше чтобы каждый раз не запрашивать токен админа при каждом сообщении в чате !!!
-            adminResponse = employeeApiHandler.getAdminInfo();
-            adminToken = adminResponse.getToken();
+//            adminResponse = employeeApiHandler.getAdminInfo();
+//            adminToken = adminResponse.getToken();
             // TODO здесь брать не админский токен всегда а берем токен пользователя и передаем для создания нового - если тот не админ, то не сможет создать
 
             switch (messageText) {
@@ -148,6 +148,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/banUser":
                     banUser("@TestTelegramBot", userId);
                     break;
+                case "/testListStatus":
+                    prepareAndSendMessage(chatId, employeeApiHandler.getListEmployeeAndStatus().toString());
                 default:
                     sendMessage(chatId, "Извините! Пока не поддерживается!");
                     break;
@@ -224,6 +226,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         SendMessage message = new SendMessage();
         prepareAndSendMessage(chatId, "Привет! Вступите в чат сотрудников по ссылке: " + inviteLink);
     }
+
 
 
 }

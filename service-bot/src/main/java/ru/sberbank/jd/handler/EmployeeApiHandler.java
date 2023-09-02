@@ -4,6 +4,7 @@ package ru.sberbank.jd.handler;
 import lombok.extern.slf4j.Slf4j;
 import net.minidev.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -13,13 +14,15 @@ import ru.sberbank.jd.dto.UserRequest;
 import ru.sberbank.jd.enums.EmployeeStatus;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
 public class EmployeeApiHandler {
 
     // for test
-    final String token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJvZHV2YW4iLCJleHAiOjE2OTM0MjQ2NTYsInJvbGVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1VTRVIiXSwiZnVsbE5hbWUiOiJWYXNheSBQdXBraW4ifQ.XxuI2rEcz6tVxqf7pQRmUz6_ezCUDJaeF6wv6MapRNxRD0ewOuvat7EZwHeo5cYHiMBHoFzbhKIqZz9JEVoNTQ";
+    // TODO брать из БД токен сотрудника
+    final String token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJPZHV2YW4iLCJleHAiOjE2OTQzNzQ0ODEsInJvbGVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1VTRVIiXSwiZnVsbE5hbWUiOiJEbWl0cnkgR3VzZW5rb3YifQ.JcReXLXZEYHMfmgRnSHhFTzD3TFwXdS8jMjOuAcwkg1U-vbnxGUwT7apBsWtubGx8uCaKABSWcnMTSwzChhxKQ";
     final IntegrationConfig integrationConfig;
     private final RestTemplate restTemplate;
 
@@ -102,6 +105,30 @@ public class EmployeeApiHandler {
                 employeeIdList = List.of(response.getBody());
             }
             return employeeIdList;
+        } catch (Exception e) {
+            log.error("" + e);
+            return null;
+        }
+    }
+
+    public Map<Long, EmployeeStatus> getListEmployeeAndStatus() {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.add("Authorization", "Bearer " + token);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<Map<Long, EmployeeStatus>> response = restTemplate.exchange(
+                    String.format(integrationConfig.getEmployeeUrl(), integrationConfig.getGetSuffixEmployee() + "/status"),
+                    HttpMethod.GET,
+                    entity,
+                    new ParameterizedTypeReference<Map<Long, EmployeeStatus>>() {}
+            );
+            Map<Long, EmployeeStatus> employeeStatusMap = null;
+            if (response.getBody() != null) {
+                employeeStatusMap = response.getBody();
+            }
+            return employeeStatusMap;
         } catch (Exception e) {
             log.error("" + e);
             return null;
