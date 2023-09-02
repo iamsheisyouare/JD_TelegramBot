@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
+import ru.sberbank.jd.dto.UserRequest;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -34,7 +35,7 @@ public class VacationApiHandler {
 
     public String handleVacationsCommand(String telegramUsername) {
         EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
-        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername);
+        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername);     // TODO сделать вызов с админским токеном - мы идем из под бота а не из под юзера проверять
         if (employeeResponse == null) {
             return "Сотрудник не найден";
         }
@@ -109,7 +110,7 @@ public class VacationApiHandler {
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation()),
+                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation"),
                     HttpMethod.POST,
                     entity,
                     String.class
@@ -118,11 +119,11 @@ public class VacationApiHandler {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return "Отпуск успешно добавлен.";
             } else {
-                return "Ошибка при добавлении отпуска.";
+                return "Ошибка при добавлении отпуска: " + response.getBody();
             }
         } catch (Exception e) {
             log.error("Error: " + e.getMessage());
-            return "Ошибка при добавлении отпуска.";
+            return "Ошибка при добавлении отпуска: " + e.getMessage();
         }
     }
 
