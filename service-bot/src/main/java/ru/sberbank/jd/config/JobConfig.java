@@ -8,20 +8,8 @@ import org.springframework.context.annotation.PropertySource;
 @Configuration
 @Data
 @PropertySource("application.properties")
-public class BotConfig {
-
-    @Value("${bot.name}")
-    String botName;
-
-    @Value("${bot.token}")
-    String token;
-
-    @Value("${bot.inviteLink}")
-    String inviteLink;
+public class JobConfig {
 
     @Value("${job.scheduler.interval}")
     String interval;
-
-    @Value("${bot.chatId}")
-    String employeeChatId;
 }

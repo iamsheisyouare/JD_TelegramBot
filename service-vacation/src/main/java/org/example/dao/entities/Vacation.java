@@ -13,10 +13,7 @@ public class Vacation {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
-
+    private Long employeeId;
     private LocalDate startDate;
     private LocalDate endDate;
 
