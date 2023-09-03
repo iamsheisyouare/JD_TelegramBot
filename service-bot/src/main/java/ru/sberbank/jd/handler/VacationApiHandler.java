@@ -33,15 +33,10 @@ public class VacationApiHandler {
         this.restTemplate = restTemplate;
     }
 
-    public String handleVacationsCommand(String telegramUsername) {
-        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
-        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername);     // TODO сделать вызов с админским токеном - мы идем из под бота а не из под юзера проверять
-        if (employeeResponse == null) {
-            return "Сотрудник не найден";
-        }
+    public String handleVacationsCommand(Long employeeId) {
 
-        ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeResponse.getName());
-        //ResponseEntity<Map<Long, String>> response = getUpcomingVacations("Oduvan");
+        ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeId);
+        //ResponseEntity<Map<Long, String>> response = getUpcomingVacations("1");
         if (response.getStatusCode().is2xxSuccessful()) {
             Map<Long, String> vacationMap = response.getBody();
             String resultStr = "Ваши отпуска:\n";
@@ -55,17 +50,9 @@ public class VacationApiHandler {
             return "Ошибка при запросе списка отпусков.";
         }
     }
-    public String handleDeleteVacationCommand(String telegramUsername, long selectedVacationId) {
-        // Получаем информацию о сотруднике
-        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
-        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername);
-        if (employeeResponse == null) {
-            return "Сотрудник не найден";
-        }
-
-        // Удаляем выбранный отпуск
-        ResponseEntity<String> deleteResponse = deleteVacation(selectedVacationId);
-        return deleteResponse.getBody();
+    public String handleDeleteVacationCommand(long vacationId) {
+        String deleteResponse = String.valueOf(deleteVacation(vacationId));
+        return deleteResponse;
     }
     public ResponseEntity<String> deleteVacation(long vacationId) {
         HttpHeaders headers = new HttpHeaders();
@@ -75,7 +62,7 @@ public class VacationApiHandler {
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/" + vacationId),
+                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation/" + "/%d", vacationId),
                     HttpMethod.DELETE,
                     entity,
                     String.class
@@ -84,7 +71,7 @@ public class VacationApiHandler {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return ResponseEntity.ok("Отпуск успешно удален.");
             } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при удалении отпуска.");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Отпуск не удален. Повторите запрос");
             }
         } catch (Exception e) {
             log.error("Error: " + e.getMessage());
@@ -127,8 +114,8 @@ public class VacationApiHandler {
         }
     }
 
-    public ReplyKeyboardMarkup getVacationButtons(String telegramUsername) {
-        ResponseEntity<Map<Long, String>> response = getUpcomingVacations(telegramUsername);
+    public ReplyKeyboardMarkup getVacationButtons(Long employeeId) {
+        ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeId);
 
         if (response.getStatusCode().is2xxSuccessful()) {
             Map<Long, String> vacationMap = response.getBody();
@@ -153,8 +140,8 @@ public class VacationApiHandler {
             return null;
         }
     }
-    public Long getVacationIdByText(String buttonText, String telegramUsername) {
-        ResponseEntity<Map<Long, String>> response = getUpcomingVacations(telegramUsername);
+    public Long getVacationIdByText(String buttonText, Long employeeId) {
+        ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeId);
         if (response.getStatusCode().is2xxSuccessful()) {
             Map<Long, String> vacationMap = response.getBody();
             for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
@@ -165,7 +152,7 @@ public class VacationApiHandler {
         }
         return null; // Если не удалось найти соответствующий отпуск
     }
-    public ResponseEntity<Map<Long, String>> getUpcomingVacations(String telegramUsername) {
+    public ResponseEntity<Map<Long, String>> getUpcomingVacations(Long employeeId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -173,7 +160,7 @@ public class VacationApiHandler {
 
         try {
             ResponseEntity<Map> response = restTemplate.exchange(
-                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation?telegramUsername=" + telegramUsername),
+                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation?employeeId=" + employeeId),
                     HttpMethod.GET,
                     entity,
                     Map.class

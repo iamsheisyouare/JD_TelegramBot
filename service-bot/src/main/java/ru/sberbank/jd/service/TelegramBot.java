@@ -39,7 +39,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         * ссылка на чат приглашение и ее обработка
         * отпуска
         * джоба с автоматическим удалением лишних
-        *
+        * поиск employeeId по TelegramUsername
      */
 
 
@@ -72,7 +72,6 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private String adminToken;
 
-    private boolean isSelectingVacationToDelete = false;
     private Map<String, BotState> botStateMap = new HashMap<>();
     private Map<String, LocalDate> userStartDateMap = new HashMap<>();
 
@@ -151,17 +150,34 @@ public class TelegramBot extends TelegramLongPollingBot {
                     prepareAndSendMessage(chatId, "Find by ID | ID = " + employeeResponse.getId() + " | name = " + employeeResponse.getName() + " | status = " + employeeResponse.getStatus());
                     break;
                 case "/newUser":        // TODO сделать создание под админом и фио передавать не из чата а запрашивать
-                    String userFIO = userFirstName + " " + userLastName;
-                    employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO);      // adminToken
-                    if (employeeResponse != null) {
-                        var user = userService.setEmployeeInfo(telegramName, employeeResponse.getToken(), userId, employeeResponse.getId());
-                        prepareAndSendMessage(chatId, "Create new Employee | ID = " + employeeResponse.getId());
-                    } else {
-                        prepareAndSendMessage(chatId, "Сотрудник не был создан! У вас не хватает прав!");
+                    if (!botStateMap.containsKey(telegramName)) {
+                        prepareAndSendMessage(chatId, "Введите ваше ФИО:");
+                        botStateMap.put(telegramName, BotState.WAITING_NEW_USER_DATA);
+                    } else if (botStateMap.get(telegramName) == BotState.WAITING_NEW_USER_DATA) {
+                        // Пользователь вводит ФИО, обрабатываем это и создаем нового пользователя
+                        String userFIO = messageText;
+                        employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO);
+                        if (employeeResponse != null) {
+                            var user = userService.setEmployeeInfo(telegramName, employeeResponse.getToken(), userId, employeeResponse.getId());
+                            prepareAndSendMessage(chatId, "Создан новый пользователь | ID = " + user.getId());
+                        } else {
+                            prepareAndSendMessage(chatId, "Сотрудник не был создан! У вас не хватает прав!");
+                        }
+                        // Очищаем состояние
+                        botStateMap.remove(telegramName);
                     }
                     break;
+//                    String userFIO = userFirstName + " " + userLastName;
+//                    employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO);      // adminToken
+//                    if (employeeResponse != null) {
+//                        var user = userService.setEmployeeInfo(telegramName, employeeResponse.getToken(), userId, employeeResponse.getId());
+//                        prepareAndSendMessage(chatId, "Create new Employee | ID = " + employeeResponse.getId());
+//                    } else {
+//                        prepareAndSendMessage(chatId, "Сотрудник не был создан! У вас не хватает прав!");
+//                    }
+//                    break;
                 case "/vacations":
-                    String vacationsMessage = vacationApiHandler.handleVacationsCommand(telegramName);
+                    String vacationsMessage = vacationApiHandler.handleVacationsCommand(employeeId);
                     prepareAndSendMessage(chatId, vacationsMessage);
                     break;
                 case "/new_vacation":
@@ -169,25 +185,30 @@ public class TelegramBot extends TelegramLongPollingBot {
                     botStateMap.put(telegramName, BotState.WAITING_START_DATE);
                     break;
                 case "/delete_vacation":
-                    ReplyKeyboardMarkup keyboardMarkup = vacationApiHandler.getVacationButtons(telegramName);
+
+                    botStateMap.put(telegramName, BotState.WAITING_VACATION_TO_DELETE);
+
+                    ReplyKeyboardMarkup keyboardMarkup = vacationApiHandler.getVacationButtons(employeeId);
                     if (keyboardMarkup != null) {
                         prepareAndSendKeyboard(chatId, "Выберите отпуск для удаления:", keyboardMarkup);
-                        isSelectingVacationToDelete = true;
                     } else {
                         sendMessage(chatId, "Нет доступных отпусков для удаления.");
+                        // Сбросьте состояние
+                        botStateMap.remove(telegramName);
                     }
                     break;
                 case "Выберите отпуск для удаления:":
-                    if (isSelectingVacationToDelete) {
+                    if (botStateMap.get(telegramName) == BotState.WAITING_VACATION_TO_DELETE) {
                         String buttonText = update.getMessage().getText();
-                        Long vacationId = vacationApiHandler.getVacationIdByText(buttonText, telegramName);
+                        Long vacationId = vacationApiHandler.getVacationIdByText(buttonText, employeeId);
                         if (vacationId != null) {
-                            String deleteVacationMessage = vacationApiHandler.handleDeleteVacationCommand(telegramName, vacationId);
+                            String deleteVacationMessage = vacationApiHandler.handleDeleteVacationCommand(vacationId);
                             prepareAndSendMessage(chatId, deleteVacationMessage);
                         } else {
                             sendMessage(chatId, "Ошибка при выборе отпуска.");
                         }
-                        isSelectingVacationToDelete = false;
+                        // Очищаем состояние
+                        botStateMap.remove(telegramName);
                     }
                     break;
                 case "/banUser":
