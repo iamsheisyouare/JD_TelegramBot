@@ -11,7 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
-import ru.sberbank.jd.dto.UserRequest;
+import ru.sberbank.jd.service.UserService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -26,6 +26,9 @@ public class VacationApiHandler {
 
     private final IntegrationConfig integrationConfig;
     private final RestTemplate restTemplate;
+
+    @Autowired
+    UserService userService;
 
     @Autowired
     public VacationApiHandler(IntegrationConfig integrationConfig, RestTemplate restTemplate) {

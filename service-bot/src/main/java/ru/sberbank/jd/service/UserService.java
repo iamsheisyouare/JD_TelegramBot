@@ -57,4 +57,15 @@ public class UserService {
         return ResponseEntity.ok(userRepository.findById(id).orElse(null));
     }
 
+    public String getUserToken(String telegramName)
+    {
+        if (getByTelegramName(telegramName).isPresent()){
+            User user = getByTelegramName(telegramName).get();
+            return user.getToken();
+        }
+        else{
+            return "";      // TODO возвращаем пустую строку
+        }
+    }
+
 }
