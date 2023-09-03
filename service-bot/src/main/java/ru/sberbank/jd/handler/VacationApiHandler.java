@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
+import ru.sberbank.jd.service.UserService;
 
 import java.util.Map;
 
@@ -19,14 +20,17 @@ public class VacationApiHandler {
     private final RestTemplate restTemplate;
 
     @Autowired
+    UserService userService;
+
+    @Autowired
     public VacationApiHandler(IntegrationConfig integrationConfig, RestTemplate restTemplate) {
         this.integrationConfig = integrationConfig;
         this.restTemplate = restTemplate;
     }
 
     public String handleVacationsCommand(String telegramUsername) {
-        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
-        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername);
+        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig, userService);
+        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername, telegramUsername);       // TODO проверить надо ли разных?
         if (employeeResponse == null) {
             return "Сотрудник не найден";
         }

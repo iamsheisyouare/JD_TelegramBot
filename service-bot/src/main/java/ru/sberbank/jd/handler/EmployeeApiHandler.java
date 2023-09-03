@@ -12,6 +12,7 @@ import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
 import ru.sberbank.jd.dto.UserRequest;
 import ru.sberbank.jd.enums.EmployeeStatus;
+import ru.sberbank.jd.service.UserService;
 
 import java.util.List;
 import java.util.Map;
@@ -20,17 +21,21 @@ import java.util.Map;
 @Component
 public class EmployeeApiHandler {
 
-    // for test
-    // TODO брать из БД токен сотрудника
-    final String token = "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJPZHV2YW4iLCJleHAiOjE2OTQzNzQ0ODEsInJvbGVzIjpbIlJPTEVfQURNSU4iLCJST0xFX1VTRVIiXSwiZnVsbE5hbWUiOiJEbWl0cnkgR3VzZW5rb3YifQ.JcReXLXZEYHMfmgRnSHhFTzD3TFwXdS8jMjOuAcwkg1U-vbnxGUwT7apBsWtubGx8uCaKABSWcnMTSwzChhxKQ";
     final IntegrationConfig integrationConfig;
     private final RestTemplate restTemplate;
+    private final UserService userService;
+
+//    @Autowired
+//    UserService userService;
 
     @Autowired
-    public EmployeeApiHandler(RestTemplate restTemplate, IntegrationConfig integrationConfig) {
+    public EmployeeApiHandler(RestTemplate restTemplate, IntegrationConfig integrationConfig, UserService userService) {
         this.restTemplate = restTemplate;
         this.integrationConfig = integrationConfig;
+        this.userService = userService;
     }
+
+    private String token;
 
     /**
      * Получает информацию о сотруднике по его имени в Telegram.
@@ -39,11 +44,11 @@ public class EmployeeApiHandler {
      * @return объект EmployeeResponse с информацией о сотруднике или null, если запрашиваемый сотрудник не найден
      * @throws RuntimeException при ошибке выполнения запроса
      */
-    public EmployeeResponse getEmployeeByTelegramName(String telegramName) {
+    public EmployeeResponse getEmployeeByTelegramName(String telegramName, String userTelegramName) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("Authorization", "Bearer " + token);
+        headers.add("Authorization", "Bearer " + userService.getUserToken(userTelegramName));
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<EmployeeResponse> response = restTemplate.exchange(
@@ -66,11 +71,11 @@ public class EmployeeApiHandler {
      * @param employeeId идентификатор сотрудника
      * @return информация о сотруднике или null, если произошла ошибка
      */
-    public EmployeeResponse getEmployeeById(Long employeeId) {
+    public EmployeeResponse getEmployeeById(Long employeeId, String userTelegramName) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("Authorization", "Bearer " + token);
+        headers.add("Authorization", "Bearer " + userService.getUserToken(userTelegramName));
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<EmployeeResponse> response = restTemplate.exchange(
@@ -87,11 +92,11 @@ public class EmployeeApiHandler {
         }
     }
 
-    public List<Long> getEmployeeListWithStatus(EmployeeStatus status/*, String adminToken*/) {
+    public List<Long> getEmployeeListWithStatus(EmployeeStatus status, String userTelegramName /*, String adminToken*/) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("Authorization", "Bearer " + token);
+        headers.add("Authorization", "Bearer " + userService.getUserToken(userTelegramName));
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<Long[]> response = restTemplate.exchange(
@@ -111,11 +116,11 @@ public class EmployeeApiHandler {
         }
     }
 
-    public Map<Long, EmployeeStatus> getListEmployeeAndStatus() {
+    public Map<Long, EmployeeStatus> getListEmployeeAndStatus(String userTelegramName) {
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.add("Authorization", "Bearer " + token);
+        headers.add("Authorization", "Bearer " + userService.getUserToken(userTelegramName));
         HttpEntity<String> entity = new HttpEntity<>(headers);
         try {
             ResponseEntity<Map<Long, EmployeeStatus>> response = restTemplate.exchange(
@@ -156,7 +161,7 @@ public class EmployeeApiHandler {
      * @param telegramName имя в Telegram
      * @param userFIO      ФИО пользователя
      */
-    public EmployeeResponse createEmployee(String telegramName, String userFIO/*, String adminToken*/) {
+    public EmployeeResponse createEmployee(String telegramName, String userFIO, String userTelegramName /*, String adminToken*/) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -164,7 +169,7 @@ public class EmployeeApiHandler {
         userRequest.setUsername(telegramName);
         userRequest.setFio(userFIO);
 
-        headers.add("Authorization", "Bearer " + token /*adminToken*/);
+        headers.add("Authorization", "Bearer " + userService.getUserToken(userTelegramName) /*adminToken*/);
         HttpEntity<UserRequest> entity = new HttpEntity<>(userRequest, headers);
         try {
             ResponseEntity<EmployeeResponse> response = restTemplate.exchange(

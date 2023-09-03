@@ -31,7 +31,7 @@ public class ChatJoinRequestHandler {
      * @param chatJoinRequest the chat join request
      * @return the bot api method
      */
-    public void processChatJoinRequest(TelegramBot telegramBot, ChatJoinRequest chatJoinRequest) {
+    public void processChatJoinRequest(TelegramBot telegramBot, ChatJoinRequest chatJoinRequest, Boolean userFound) {
         String userName = chatJoinRequest.getUser().getUserName();
 
         log.info("Зашли в проверку ссылки приглашения");
@@ -41,23 +41,21 @@ public class ChatJoinRequestHandler {
 
         BotApiMethodBoolean handleChatJoinRequest;
 
-        if (userName != null ) {
+        if (userName != null && userFound) {
+            log.info("Approve need");
             handleChatJoinRequest = new ApproveChatJoinRequest(chatId.toString(), userId);
-            //handleChatJoinRequest = new ApproveChatJoinRequest("@TestTelegramBot", userId);
-            try{
-                Boolean result = telegramBot.execute(handleChatJoinRequest);
-                log.info("result = " + result.toString());
-            }
-            catch (TelegramApiException e){
-                log.error("Approve failed: " + e.getMessage());
-            }
-            log.info("Approve finish");
-
-            // apiClient.storeTgId(userName, userId.toString());    // TODO сохранение в базу что добавлен в чат
         } else {
-            log.info("Decline not OK");
+            log.info("Decline need");
             handleChatJoinRequest = new DeclineChatJoinRequest(chatId.toString(), userId);
         }
+        try{
+            Boolean result = telegramBot.execute(handleChatJoinRequest);
+            log.info("result = " + result.toString());
+        }
+        catch (TelegramApiException e){
+            log.error("Approve/Decline failed: " + e.getMessage());
+        }
+        log.info("Approve/Decline finish");
         responseToUser(telegramBot, userId, handleChatJoinRequest);
     }
 
