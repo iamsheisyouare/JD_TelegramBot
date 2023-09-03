@@ -26,7 +26,7 @@ public class VacationApiHandler {
 
     public String handleVacationsCommand(String telegramUsername) {
         EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
-        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername);
+        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramUsername, telegramUsername);       // TODO проверить надо ли разных?
         if (employeeResponse == null) {
             return "Сотрудник не найден";
         }

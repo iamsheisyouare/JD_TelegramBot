@@ -28,14 +28,6 @@ import java.util.Set;
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
-    /* TODO
-        * ссылка на чат приглашение и ее обработка
-        * отпуска
-        * джоба с автоматическим удалением лишних
-        *
-     */
-
-
     final BotConfig botConfig;
 
     final IntegrationConfig integrationConfig;
@@ -94,15 +86,16 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         Long chatId = null;
         long userId;
+
+        EmployeeResponse employeeResponse = new EmployeeResponse();
+        EmployeeResponse adminResponse = new EmployeeResponse();
+        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
+        VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
+
         if (update.hasMessage() && update.getMessage().hasText()) {
             String messageText = update.getMessage().getText();
             chatId = update.getMessage().getChatId();
             userId = update.getMessage().getFrom().getId();
-
-            EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
-            EmployeeResponse employeeResponse = new EmployeeResponse();
-            EmployeeResponse adminResponse = new EmployeeResponse();
-            VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
 
             telegramName = update.getMessage().getChat().getUserName();
             userFirstName = update.getMessage().getChat().getFirstName();
@@ -123,17 +116,21 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/join":
                     sendInviteLink(chatId);
                     break;
-                case "/userByName":
-                    employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramName);
-                    prepareAndSendMessage(chatId, "Find by Name | ID = " + employeeResponse.getId() + " | token = " + employeeResponse.getToken());
-                    break;
-                case "/userById":
-                    employeeResponse = employeeApiHandler.getEmployeeById(2L);
-                    prepareAndSendMessage(chatId, "Find by ID | ID = " + employeeResponse.getId() + " | name = " + employeeResponse.getName() + " | status = " + employeeResponse.getStatus());
-                    break;
+//                case "/userByName":
+//                    employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramName);
+//                    prepareAndSendMessage(chatId, "Find by Name | ID = " + employeeResponse.getId() + " | token = " + employeeResponse.getToken());
+//                    break;
+//                case "/userById":
+//                    employeeResponse = employeeApiHandler.getEmployeeById(2L);
+//                    prepareAndSendMessage(chatId, "Find by ID | ID = " + employeeResponse.getId() + " | name = " + employeeResponse.getName() + " | status = " + employeeResponse.getStatus());
+//                    break;
                 case "/newUser":        // TODO сделать создание под админом и фио передавать не из чата а запрашивать
                     String userFIO = userFirstName + " " + userLastName;
-                    employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO);      // adminToken
+                    if (employeeApiHandler.getEmployeeByTelegramName(telegramName, integrationConfig.getAdminLogin()).getId() != null){
+                        prepareAndSendMessage(chatId, "Сотрудник не был создан, т.к. сотрудник с логином = '" + telegramName + "' уже существует!");
+                        break;
+                    }
+                    employeeResponse = employeeApiHandler.createEmployee(telegramName, userFIO, integrationConfig.getAdminLogin());      // adminToken
                     if (employeeResponse != null) {
                         var user = userService.setEmployeeInfo(telegramName, employeeResponse.getToken(), userId, employeeResponse.getId());
                         prepareAndSendMessage(chatId, "Create new Employee | ID = " + employeeResponse.getId());
@@ -145,20 +142,25 @@ public class TelegramBot extends TelegramLongPollingBot {
                     String vacationsMessage = vacationApiHandler.handleVacationsCommand(telegramName);
                     prepareAndSendMessage(chatId, vacationsMessage);
                     break;
-                case "/banUser":
-                    banUser("@TestTelegramBot", userId);
-                    break;
-                case "/testListStatus":
-                    prepareAndSendMessage(chatId, employeeApiHandler.getListEmployeeAndStatus().toString());
+//                case "/banUser":
+//                    banUser("@TestTelegramBot", userId);
+//                    break;
+//                case "/testListStatus":
+//                    prepareAndSendMessage(chatId, employeeApiHandler.getListEmployeeAndStatus().toString());
                 default:
-                    sendMessage(chatId, "Извините! Пока не поддерживается!");
+                    if (!chatId.toString().equals(botConfig.getEmployeeChatId().toString())) {
+                        sendMessage(chatId, "Извините! Пока не поддерживается!");     // TODO чтобы не реагировал в общем чате на любое сообщение
+                    }
                     break;
             }
         } else if (update.hasChatJoinRequest()) {
             ChatJoinRequest chatJoinRequest = update.getChatJoinRequest();
             chatId = chatJoinRequest.getChat().getId();
+            telegramName = chatJoinRequest.getUser().getUserName();
+
+            Boolean userFound = (employeeApiHandler.getEmployeeByTelegramName(telegramName, integrationConfig.getAdminLogin()) == null) ? false : true;
             ChatJoinRequestHandler chatJoinRequestHandler = new ChatJoinRequestHandler();
-            chatJoinRequestHandler.processChatJoinRequest(this, chatJoinRequest);
+            chatJoinRequestHandler.processChatJoinRequest(this, chatJoinRequest, userFound);
         }
         if (chatId != null) {
             chatIdSet.add(chatId.toString());
