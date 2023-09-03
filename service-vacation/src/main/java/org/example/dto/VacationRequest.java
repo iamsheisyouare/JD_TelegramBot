@@ -7,7 +7,7 @@ import java.time.LocalDate;
 @Data
 public class VacationRequest {
 
-    private String telegramUsername;
+    private Long employeeId;
     private LocalDate startDate;
     private LocalDate endDate;
 
