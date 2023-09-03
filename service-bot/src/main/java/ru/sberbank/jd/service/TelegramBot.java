@@ -8,9 +8,11 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodBoolean;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.BanChatMember;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.sberbank.jd.config.BotConfig;
 import ru.sberbank.jd.config.IntegrationConfig;
@@ -61,6 +63,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private Long employeeId;
 
     private String inviteLink;
+
+    private Long messageKeyboardId;
 
     private String adminToken;
 
@@ -118,6 +122,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             telegramName = update.getMessage().getChat().getUserName();
             userFirstName = update.getMessage().getChat().getFirstName();
             userLastName = update.getMessage().getChat().getLastName();
+            employeeId = userService.getByTelegramName(telegramName).get().getEmployeeId();
 
             // TODO вынести выше чтобы каждый раз не запрашивать токен админа при каждом сообщении в чате !!!
 //            adminResponse = employeeApiHandler.getAdminInfo();
@@ -144,7 +149,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 //                    break;
                 case "/newUser":        // TODO сделать создание под админом и фио передавать не из чата а запрашивать
                     if (!botStateMap.containsKey(telegramName)) {
-                        prepareAndSendMessage(chatId, "Введите ваше ФИО:");
+                        prepareAndSendMessage(chatId, "Введите ФИО сотрудника:");
                         botStateMap.put(telegramName, BotState.WAITING_NEW_USER_DATA);
                     } else if (botStateMap.get(telegramName) == BotState.WAITING_NEW_USER_DATA) {
                         // Пользователь вводит ФИО, обрабатываем это и создаем нового пользователя
@@ -194,20 +199,21 @@ public class TelegramBot extends TelegramLongPollingBot {
                         botStateMap.remove(telegramName);
                     }
                     break;
-                case "Выберите отпуск для удаления:":
-                    if (botStateMap.get(telegramName) == BotState.WAITING_VACATION_TO_DELETE) {
-                        String buttonText = update.getMessage().getText();
-                        Long vacationId = vacationApiHandler.getVacationIdByText(buttonText, employeeId);
-                        if (vacationId != null) {
-                            String deleteVacationMessage = vacationApiHandler.handleDeleteVacationCommand(vacationId);
-                            prepareAndSendMessage(chatId, deleteVacationMessage);
-                        } else {
-                            sendMessage(chatId, "Ошибка при выборе отпуска.");
-                        }
-                        // Очищаем состояние
-                        botStateMap.remove(telegramName);
-                    }
-                    break;
+//                case "Выберите отпуск для удаления:":
+//                    if (botStateMap.get(telegramName) == BotState.WAITING_VACATION_TO_DELETE) {
+//                        String buttonText = update.getMessage().getText();
+//                        Long vacationId = vacationApiHandler.getVacationIdByText(buttonText, employeeId);
+//                        if (vacationId != null) {
+//                            String deleteVacationMessage = vacationApiHandler.handleDeleteVacationCommand(vacationId);
+//                            prepareAndSendMessage(chatId, deleteVacationMessage);
+//                        } else {
+//                            sendMessage(chatId, "Ошибка при выборе отпуска.");
+//                            botStateMap.remove(telegramName);
+//                        }
+//                        // Очищаем состояние
+//                        botStateMap.remove(telegramName);
+//                    }
+//                    break;
 //                case "/banUser":
 //                    banUser("@TestTelegramBot", userId);
 //                    break;
@@ -297,22 +303,50 @@ public class TelegramBot extends TelegramLongPollingBot {
         executeMessage(message);
     }
 
+    public void DeleteMessage(long chatId, int messageId) throws TelegramApiException {
+        try {
+            DeleteMessage deleteMessage = new DeleteMessage();
+            deleteMessage.setChatId(chatId);
+            deleteMessage.setMessageId(messageId);
+            execute(deleteMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void sendInviteLink(long chatId) {
-        SendMessage message = new SendMessage();
         prepareAndSendMessage(chatId, "Привет! Вступите в чат сотрудников по ссылке: " + inviteLink);
     }
 
     private void handleUserState(long chatId, String telegramName, String messageText) {
         BotState currentState = botStateMap.get(telegramName);
+        VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
 
         switch (currentState) {
             case WAITING_START_DATE:
                 handleStartDateInput(chatId, telegramName, messageText);
-            break;
+                break;
             case WAITING_END_DATE:
                 handleEndDateInput(chatId, telegramName, messageText);
-            break;
+                break;
+            case WAITING_VACATION_TO_DELETE:
+                Long vacationId = vacationApiHandler.getVacationIdByText(messageText, employeeId);
+                if (vacationId != null) {
+                    String deleteVacationMessage = handleDeleteVacationCommand(vacationId);
+                    prepareAndSendMessage(chatId, deleteVacationMessage);
+                } else {
+                    sendMessage(chatId, "Ошибка при выборе отпуска.");
+                    botStateMap.remove(telegramName);
+                }
+                botStateMap.remove(telegramName);
+                break;
         }
+    }
+
+    public String handleDeleteVacationCommand(long vacationId) {
+        VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
+        String deleteResponse = String.valueOf(vacationApiHandler.deleteVacation(vacationId));
+        return deleteResponse;          // TODO Нормальный ответ надо!!!
     }
 
     private void handleStartDateInput(long chatId, String telegramName, String messageText) {

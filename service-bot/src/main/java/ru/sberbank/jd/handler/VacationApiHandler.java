@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
+import ru.sberbank.jd.enums.EmployeeStatus;
 import ru.sberbank.jd.service.UserService;
 
 import java.time.LocalDate;
@@ -19,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Component
@@ -53,10 +55,7 @@ public class VacationApiHandler {
             return "Ошибка при запросе списка отпусков.";
         }
     }
-    public String handleDeleteVacationCommand(long vacationId) {
-        String deleteResponse = String.valueOf(deleteVacation(vacationId));
-        return deleteResponse;
-    }
+
     public ResponseEntity<String> deleteVacation(long vacationId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -65,7 +64,7 @@ public class VacationApiHandler {
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
-                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation/" + "/%d", vacationId),
+                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation/" + vacationId),
                     HttpMethod.DELETE,
                     entity,
                     String.class
@@ -143,18 +142,28 @@ public class VacationApiHandler {
             return null;
         }
     }
+
     public Long getVacationIdByText(String buttonText, Long employeeId) {
         ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeId);
-        if (response.getStatusCode().is2xxSuccessful()) {
+        if (response != null && response.getStatusCode().is2xxSuccessful()) {
             Map<Long, String> vacationMap = response.getBody();
-            for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
-                if (entry.getValue().equals(buttonText)) {
-                    return entry.getKey(); // Возвращаем ID отпуска по тексту кнопки
+            if (vacationMap != null) {
+                for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
+                    if (entry.getValue().equals(buttonText)) {
+                        try {
+                            return entry.getKey();
+                        } catch (Exception e){
+                            return null;
+                        }
+                    }
                 }
             }
         }
         return null; // Если не удалось найти соответствующий отпуск
     }
+
+
+
     public ResponseEntity<Map<Long, String>> getUpcomingVacations(Long employeeId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -162,11 +171,11 @@ public class VacationApiHandler {
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
         try {
-            ResponseEntity<Map> response = restTemplate.exchange(
+            ResponseEntity<Map<Long, String>> response = restTemplate.exchange(
                     String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation?employeeId=" + employeeId),
                     HttpMethod.GET,
                     entity,
-                    Map.class
+                    new ParameterizedTypeReference<Map<Long, String>>() {}
             );
             /*
             //TODO переписать определение response
