@@ -23,14 +23,16 @@ public class EmployeeApiHandler {
 
     final IntegrationConfig integrationConfig;
     private final RestTemplate restTemplate;
+    private final UserService userService;
+
+//    @Autowired
+//    UserService userService;
 
     @Autowired
-    UserService userService;
-
-    @Autowired
-    public EmployeeApiHandler(RestTemplate restTemplate, IntegrationConfig integrationConfig) {
+    public EmployeeApiHandler(RestTemplate restTemplate, IntegrationConfig integrationConfig, UserService userService) {
         this.restTemplate = restTemplate;
         this.integrationConfig = integrationConfig;
+        this.userService = userService;
     }
 
     private String token;

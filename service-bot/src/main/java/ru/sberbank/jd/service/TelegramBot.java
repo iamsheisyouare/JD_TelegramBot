@@ -89,7 +89,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         EmployeeResponse employeeResponse = new EmployeeResponse();
         EmployeeResponse adminResponse = new EmployeeResponse();
-        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig);
+        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig, userService);
         VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
 
         if (update.hasMessage() && update.getMessage().hasText()) {
