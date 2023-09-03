@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
+import org.example.jwt.dto.JwtRequest;
 import org.example.model.Employee;
 import org.example.repository.EmployeeRepository;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ public class AppTest {
 
     /**
      * Админ обладает расширенными правами на ресурсе employee
+     *
      * @throws Exception
      */
     @Test
@@ -48,14 +51,9 @@ public class AppTest {
         //показываем что это админ
         assertTrue(isAdmin(emp.get()));
 
-
-
         mockMvc.perform(MockMvcRequestBuilders
-                        // .get("/employee", 1L)
-
                         .get("/employee/{id}", ADMIN_ID)
                         .header("authorization", "Bearer " + token)
-                        //.with(csrf())
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
 
@@ -63,6 +61,7 @@ public class AppTest {
 
     /**
      * Пользователь на защещенном ресурсе может смотреть данные только по себе
+     *
      * @throws Exception
      */
     @Test
@@ -90,8 +89,8 @@ public class AppTest {
     }
 
     /**
-     * При попытке посмотреть пользователю не свою запись на защищенном ресурсе
-     * возникает 403 ошибка
+     * При попытке посмотреть пользователю не свою запись на защищенном ресурсе возникает 403 ошибка
+     *
      * @throws Exception
      */
     @Test
@@ -118,25 +117,30 @@ public class AppTest {
 
     /**
      * На незащещенный ресурс можно попадать без аутентфикации
+     *
      * @throws Exception
      */
-
-
-    /*****пока эндпоинт убран
     @Test
     public void testOnNonSecurable() throws Exception {
         Optional<Employee> emp = employeeRepository.findById(USER_ID);
         if (!emp.isPresent()) {
             throw new RuntimeException("Пользователя не нашли");
         }
-        String name = emp.get().getTelegramName();
-        mockMvc.perform(MockMvcRequestBuilders
+        JwtRequest req = new JwtRequest();
+        req.setUsername(emp.get().getTelegramName());
+        req.setPassword(emp.get().getPassword());
 
-                        .get("/login/{name}", name)
+        String name = emp.get().getTelegramName();
+        ObjectMapper objectMapper = new ObjectMapper();
+        String requestBody = objectMapper.writeValueAsString(req);
+        mockMvc.perform(MockMvcRequestBuilders
+                        .post("/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }
-    **********/
+
 
     private boolean isAdmin(Employee empl) {
         return (empl.getRoles().stream().
