@@ -127,6 +127,7 @@ public class VacationApiHandler {
 
             ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
             keyboardMarkup.setResizeKeyboard(true);
+            keyboardMarkup.setOneTimeKeyboard(true);
             List<KeyboardRow> keyboardRows = new ArrayList<>();
 
             for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
