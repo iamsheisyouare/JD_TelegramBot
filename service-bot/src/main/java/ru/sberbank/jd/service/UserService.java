@@ -58,6 +58,19 @@ public class UserService {
         }
     }
 
+    public User setTelegramUserId(String telegramName, Long telegramUserId) {
+
+        if (getByTelegramName(telegramName).isPresent()){
+            User user = getByTelegramName(telegramName).get();
+            user.setTelegramUserId(telegramUserId);
+            User saved = userRepository.save(user);
+            return saved;
+        }
+        else{
+            return null;
+        }
+    }
+
     public ResponseEntity<User> findById(Long id)
     {
         return ResponseEntity.ok(userRepository.findById(id).orElse(null));

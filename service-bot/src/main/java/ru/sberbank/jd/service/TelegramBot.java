@@ -12,6 +12,7 @@ import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.sberbank.jd.config.BotConfig;
 import ru.sberbank.jd.config.IntegrationConfig;
@@ -69,6 +70,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     private Long messageKeyboardId;
 
     private String adminToken;
+
+    private int messageId;
 
     private Map<String, BotState> botStateMap = new HashMap<>();
     private Map<String, LocalDate> userStartDateMap = new HashMap<>();
@@ -264,6 +267,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             var user = new User(name, userId);
             userRepository.save(user);
         }
+        if (userService.getByTelegramName(name).get().getTelegramUserId() == null) {
+            userService.setTelegramUserId(name, userId);
+        }
 
         sendMessage(chatId, answer);
     }
@@ -304,15 +310,27 @@ public class TelegramBot extends TelegramLongPollingBot {
         executeMessage(message);
     }
 
-    public void DeleteMessage(long chatId, int messageId) throws TelegramApiException {
+    // TODO добавить
+    public void deleteMessage(long chatId, int messageId) {
         try {
             DeleteMessage deleteMessage = new DeleteMessage();
             deleteMessage.setChatId(chatId);
             deleteMessage.setMessageId(messageId);
             execute(deleteMessage);
+            messageId = deleteMessage.getMessageId();
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
+    }
+
+    private void removeKeyboard(long chatId, String textToSend) {
+        SendMessage message = new SendMessage();
+        message.setChatId(String.valueOf(chatId));
+        message.setText(textToSend);
+
+        ReplyKeyboardRemove keyboardRemove = new ReplyKeyboardRemove();
+        message.setReplyMarkup(keyboardRemove);
+        executeMessage(message);
     }
 
     private void sendInviteLink(long chatId) {
@@ -339,6 +357,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "Ошибка при выборе отпуска.");
                     botStateMap.remove(telegramName);
                 }
+                removeKeyboard(chatId, "Test");
                 botStateMap.remove(telegramName);
                 break;
             case WAITING_NEW_USER_FIO:
