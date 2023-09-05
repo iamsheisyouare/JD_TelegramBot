@@ -64,7 +64,7 @@ public class ChatUserJob {
                                     if (!"kicked".equals(chatMember.getStatus()) && status.equals(EmployeeStatus.FIRED)) {
                                         chatMemberChangeStatus = new BanChatMember(chatId, userId);
                                     }
-                                    else if ("kicked".equals(chatMember.getStatus()) && status.equals(EmployeeStatus.WORK)) {
+                                    else if ("kicked".equals(chatMember.getStatus()) && status.equals(EmployeeStatus.WORK)) {   // TODO Какой все таки статус? И если left сделать обработку тоже
                                         chatMemberChangeStatus = new UnbanChatMember(chatId, userId);
                                     }
 //                                    else {
@@ -91,7 +91,7 @@ public class ChatUserJob {
             });
         }
         else {
-            log.warn("Список работающих сотрудников = null");
+            log.warn("Список сотрудников = null");
         }
     }
 }

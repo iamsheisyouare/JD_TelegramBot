@@ -30,6 +30,13 @@ public class User {
         this.telegramUserId = telegramUserId;
     }
 
+    public User(String telegramName, String token, Long employeeId) {
+        this.telegramName = telegramName;
+        this.token = token;
+        this.isDeleted = false;
+        this.employeeId = employeeId;
+    }
+
     public User(String telegramName, String token, Long telegramUserId, Long employeeId) {
         this.telegramName = telegramName;
         this.token = token;

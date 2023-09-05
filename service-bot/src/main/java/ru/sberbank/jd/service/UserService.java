@@ -36,7 +36,13 @@ public class UserService {
         return saved;
     }
 
-    public User setEmployeeInfo(String telegramName, String token, Long telegramUserId, Long employeeId) {
+    public User createNewUser(String telegramName, String token, Long employeeId) {
+        User user = new User(telegramName, token, employeeId);
+        User saved = userRepository.save(user);
+        return saved;
+    }
+
+    public User setEmployeeInfo(String telegramName, String token, /*Long telegramUserId,*/ Long employeeId) {
 
         if (getByTelegramName(telegramName).isPresent()){
             User user = getByTelegramName(telegramName).get();
@@ -46,7 +52,7 @@ public class UserService {
             return saved;
         }
         else{
-            User user = createNewUser(telegramName, token, telegramUserId, employeeId);
+            User user = createNewUser(telegramName, token, /*telegramUserId,*/ employeeId);
             User saved = userRepository.save(user);
             return saved;
         }
