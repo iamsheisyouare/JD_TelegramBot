@@ -27,10 +27,7 @@ import ru.sberbank.jd.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Getter
@@ -198,6 +195,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     ReplyKeyboardMarkup keyboardMarkup = vacationApiHandler.getVacationButtons(employeeId);
                     if (keyboardMarkup != null) {
                         prepareAndSendKeyboard(chatId, "Выберите отпуск для удаления:", keyboardMarkup);
+
                     } else {
                         sendMessage(chatId, "Нет доступных отпусков для удаления.");
                         // Сбросьте состояние
@@ -311,24 +309,25 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     // TODO добавить
-    public void deleteMessage(long chatId, int messageId) {
-        try {
-            DeleteMessage deleteMessage = new DeleteMessage();
-            deleteMessage.setChatId(chatId);
-            deleteMessage.setMessageId(messageId);
-            execute(deleteMessage);
-            messageId = deleteMessage.getMessageId();
-        } catch (TelegramApiException e) {
-            e.printStackTrace();
-        }
-    }
+//    public void deleteMessage(long chatId, int messageId) {
+//        try {
+//            DeleteMessage deleteMessage = new DeleteMessage();
+//            deleteMessage.setChatId(chatId);
+//            deleteMessage.setMessageId(messageId);
+//            execute(deleteMessage);
+//            messageId = deleteMessage.getMessageId();
+//        } catch (TelegramApiException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     private void removeKeyboard(long chatId, String textToSend) {
+        ReplyKeyboardRemove keyboardRemove = new ReplyKeyboardRemove();
+        keyboardRemove.setRemoveKeyboard(true);
+
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
         message.setText(textToSend);
-
-        ReplyKeyboardRemove keyboardRemove = new ReplyKeyboardRemove();
         message.setReplyMarkup(keyboardRemove);
         executeMessage(message);
     }
@@ -351,13 +350,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             case WAITING_VACATION_TO_DELETE:
                 Long vacationId = vacationApiHandler.getVacationIdByText(messageText, employeeId);
                 if (vacationId != null) {
-                    String deleteVacationMessage = handleDeleteVacationCommand(vacationId);
-                    prepareAndSendMessage(chatId, deleteVacationMessage);
+                    handleDeleteVacationCommand(vacationId, chatId);
                 } else {
                     sendMessage(chatId, "Ошибка при выборе отпуска.");
                     botStateMap.remove(telegramName);
                 }
-                removeKeyboard(chatId, "Test");
+                removeKeyboard(chatId, "Выберите следующую команду");
                 botStateMap.remove(telegramName);
                 break;
             case WAITING_NEW_USER_FIO:
@@ -390,10 +388,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    public String handleDeleteVacationCommand(long vacationId) {
+    public String handleDeleteVacationCommand(long vacationId, long chatId) {
         VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
-        String deleteResponse = String.valueOf(vacationApiHandler.deleteVacation(vacationId));
-        return deleteResponse;          // TODO Нормальный ответ надо!!!
+        String deleteResponse = vacationApiHandler.deleteVacation(vacationId);
+        prepareAndSendMessage(chatId, deleteResponse);
+        return deleteResponse;
     }
 
     private void handleStartDateInput(long chatId, String telegramName, String messageText) {
@@ -421,13 +420,17 @@ public class TelegramBot extends TelegramLongPollingBot {
             prepareAndSendMessage(chatId, "Некорректный формат даты. Попробуйте еще раз.");
             return;
         }
-
-        employeeId = userService.getByTelegramName(telegramName).get().getEmployeeId();     // TODO сделать красиво
-
         // Получаем сохраненную дату начала отпуска
         LocalDate savedStartDate = userStartDateMap.get(telegramName);
 
-        // Обработка дат начала и окончания отпуска...
+        if (endDate.isBefore(savedStartDate)) {
+            prepareAndSendMessage(chatId, "Дата окончания отпуска должна быть позже даты начала. Попробуйте еще раз.");
+            return;
+        }
+
+        Long employeeId = getEmployeeIdByTelegramName(telegramName);
+
+        // Обработка дат начала и окончания отпуска
         VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
         String addVacationResponse = vacationApiHandler.addVacation(employeeId, savedStartDate, endDate);
         prepareAndSendMessage(chatId, addVacationResponse);
@@ -437,5 +440,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         userStartDateMap.remove(telegramName);
     }
 
-
+    private Long getEmployeeIdByTelegramName(String telegramName) {
+        Optional<User> userOptional = userService.getByTelegramName(telegramName);
+        return userOptional.map(User::getEmployeeId).orElse(null);
+    }
 }

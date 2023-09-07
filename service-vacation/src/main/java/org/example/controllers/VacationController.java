@@ -9,10 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,6 +22,11 @@ public class VacationController {
     public ResponseEntity<Map<Long, String>> getUpcomingVacations(@RequestParam Long employeeId) {
         try {
             List<Vacation> upcomingVacations = vacationService.getUpcomingVacationsByEmployeeId(employeeId);
+
+            // проверка если нет отпусков в БД
+            if (upcomingVacations.isEmpty()) {
+                return ResponseEntity.ok(Collections.emptyMap());
+            }
 
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
