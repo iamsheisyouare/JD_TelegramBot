@@ -54,10 +54,41 @@
       <artifactId>spring-boot-starter</artifactId>
       <version>3.1.2</version>
     </dependency>
-<!--    <dependency>-->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <version>3.1.2</version>
+      <scope>test</scope>
+    </dependency>
+   <!-- <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <version>5.9.3</version>
+      <scope>test</scope>
+    </dependency>-->
+ <!--   <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <version>2.13.0</version>
+    </dependency>
+-->
+
+    <!--    <dependency>-->
 <!--      <groupId>org.example</groupId>-->
 <!--      <artifactId>service-employee</artifactId>-->
 <!--      <version>1.0-SNAPSHOT</version>-->
 <!--    </dependency>-->
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.22.1</version>
+        <configuration>
+          <runOrder>reversealphabetical</runOrder>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
