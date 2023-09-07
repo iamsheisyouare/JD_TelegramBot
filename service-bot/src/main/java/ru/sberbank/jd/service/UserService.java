@@ -143,7 +143,7 @@ public class UserService {
             User user = getByTelegramName(telegramName).get();
             return user.getToken();
         } else {
-            return "";      // TODO возвращаем пустую строку
+            return "";
         }
     }
 

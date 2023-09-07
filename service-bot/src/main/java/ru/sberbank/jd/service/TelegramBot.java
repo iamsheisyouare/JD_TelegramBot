@@ -333,7 +333,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             case WAITING_NEW_USER_FIO:
                 userFIO = messageText;
 
-                prepareAndSendMessage(chatId, "Введите ваш TelegramName:");
+                prepareAndSendMessage(chatId, "Введите TelegramName сотрудника:");
                 botStateMap.put(telegramName, BotState.WAITING_NEW_USER_TELEGRAMNAME);
                 break;
             case WAITING_NEW_USER_TELEGRAMNAME:
@@ -345,7 +345,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     prepareAndSendMessage(chatId, "Сотрудник не был создан, т.к. сотрудник с логином = '" + telegramUserName + "' уже существует!");
                     break;
                 }
-                employeeResponse = employeeApiHandler.createEmployee(telegramUserName, userFIO, integrationConfig.getAdminLogin());
+                employeeResponse = employeeApiHandler.createEmployee(telegramUserName, userFIO, telegramName);
                 if (employeeResponse != null) {
                     var user = userService.setEmployeeInfo(telegramUserName, employeeResponse.getToken(), employeeResponse.getId());
                     prepareAndSendMessage(chatId, "Создан новый пользователь | ID = " + user.getId());
@@ -360,6 +360,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    /**
+     * Обрабатывает команду удаления отпуска.
+     *
+     * @param vacationId идентификатор отпуска
+     * @param chatId     идентификатор чата
+     * @return ответ на удаление отпуска
+     */
     public String handleDeleteVacationCommand(long vacationId, long chatId) {
         VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
         String deleteResponse = vacationApiHandler.deleteVacation(vacationId);
@@ -428,6 +435,12 @@ public class TelegramBot extends TelegramLongPollingBot {
         userStartDateMap.remove(telegramName);
     }
 
+    /**
+     * Получает идентификатор сотрудника по его имени в Telegram.
+     *
+     * @param telegramName имя пользователя в Telegram
+     * @return идентификатор сотрудника или null, если пользователь не найден
+     */
     private Long getEmployeeIdByTelegramName(String telegramName) {
         Optional<User> userOptional = userService.getByTelegramName(telegramName);
         return userOptional.map(User::getEmployeeId).orElse(null);
