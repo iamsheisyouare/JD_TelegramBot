@@ -10,8 +10,6 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import ru.sberbank.jd.config.IntegrationConfig;
-import ru.sberbank.jd.dto.EmployeeResponse;
-import ru.sberbank.jd.enums.EmployeeStatus;
 import ru.sberbank.jd.service.UserService;
 
 import java.time.LocalDate;
@@ -20,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Component

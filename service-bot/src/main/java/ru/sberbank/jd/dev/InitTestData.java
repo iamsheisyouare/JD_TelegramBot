@@ -8,6 +8,9 @@ import ru.sberbank.jd.model.User;
 import ru.sberbank.jd.repository.UserRepository;
 import org.springframework.stereotype.Component;
 
+/**
+ * Класс для инициализации тестовых данных в dev среде.
+ */
 @Profile("dev")
 @AllArgsConstructor
 @Slf4j
@@ -16,20 +19,24 @@ public class InitTestData {
 
     private final UserRepository userRepository;
 
+    /**
+     * Метод, вызываемый после создания компонента.
+     * Инициализирует тестовые данные, если база данных пользователей пуста.
+     */
     @PostConstruct
     public void handleStartedEvent() {
         //userRepository.deleteAll();
         if (!userRepository.findAll().isEmpty())
             return;
 
-        log.info("Initiating test data ...");
+        log.info("Инициализация тестовых данных ...");
 
         var user = new User("Oduvan", null, 61241281L, 1L);
         userRepository.save(user);
-        log.info("user added '{}'", user);
+        log.info("Добавлен пользователь '{}'", user);
 
         user = new User("iamheisyouare", null, 65532138L, 2L);
         userRepository.save(user);
-        log.info("user added '{}'", user);
+        log.info("Добавлен пользователь '{}'", user);
     }
 }

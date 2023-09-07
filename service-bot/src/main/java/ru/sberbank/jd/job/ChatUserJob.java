@@ -39,7 +39,7 @@ public class ChatUserJob {
         this.integrationConfig = integrationConfig;
     }
 
-    @Scheduled(fixedDelayString = "${job.scheduler.interval}")
+//    @Scheduled(fixedDelayString = "${job.scheduler.interval}")
     public void actualizeChatUsers() {
         log.info("Старт проверки актуальности пользователей чата сотрудников");
         Map<Long, EmployeeStatus> employeeList = employeeApiHandler.getListEmployeeAndStatus(integrationConfig.getAdminLogin());
@@ -61,22 +61,22 @@ public class ChatUserJob {
                                 ChatMember chatMember = telegramBot.execute(getChatMember);
                                 if (chatMember != null) {
                                     BotApiMethodBoolean chatMemberChangeStatus = null;
+                                    String newStatus = "";
                                     if (!"kicked".equals(chatMember.getStatus()) && status.equals(EmployeeStatus.FIRED)) {
                                         chatMemberChangeStatus = new BanChatMember(chatId, userId);
+                                        newStatus = "'Забанен'";
                                     }
                                     else if ("kicked".equals(chatMember.getStatus()) && status.equals(EmployeeStatus.WORK)) {   // TODO Какой все таки статус? И если left сделать обработку тоже
                                         chatMemberChangeStatus = new UnbanChatMember(chatId, userId);
+                                        newStatus = "'Разбанен'";
                                     }
-//                                    else {
-//                                        chatMemberChangeStatus = new BanChatMember(chatId, userId);
-//                                    }
                                     if (chatMemberChangeStatus != null) {
                                         try {
                                             telegramBot.execute(chatMemberChangeStatus);
                                             if (chatMemberChangeStatus instanceof BanChatMember) {
-                                                telegramBot.prepareAndSendMessage(userId, "Вы удалены из чата сотрудников.");   // TODO переделать на отправку в чат сотрудника, а не общий
+                                                telegramBot.prepareAndSendMessage(userId, "Вы удалены из чата сотрудников.");
                                             }
-                                            log.info(LocalDateTime.now() + ": Изменение статуса сотрудника с ID = " + employeeId + " на " + "другой"); // TODO добавить переменную с employyeStatus
+                                            log.info(LocalDateTime.now() + ": Изменение статуса сотрудника с ID = " + employeeId + " на " + newStatus);
                                         } catch (TelegramApiException e) {
                                             log.error("Не удалось изменить статус сотрудника: " + e);
                                         }
