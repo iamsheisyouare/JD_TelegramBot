@@ -43,13 +43,10 @@ public class JwtProvider {
         final Instant accessExpirationInstant = now.plusDays(10).atZone(ZoneId.systemDefault()).toInstant();
         final Date accessExpiration = Date.from(accessExpirationInstant);
         return Jwts.builder()
-                //                .serializeToJsonWith(new JacksonSerializer<>(new ObjectMapper()))
                 .setSubject(employee.getTelegramName())
                 .setExpiration(accessExpiration)
                 .signWith(jwtAccessSecret)
                 .claim("roles", employee.getRoles().stream().map(Role::getRoleName).collect(Collectors.toList()))
-                //                .claim("roles", user.getRoles())
-                //.claim("privileges", user.getRoles().stream().flatMap(role -> role.getPrivileges().stream()).collect(Collectors.toSet()))
                 .claim("fullName", employee.getFio())
                 .compact();
     }

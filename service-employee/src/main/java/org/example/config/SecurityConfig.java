@@ -32,10 +32,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth -> auth
                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/login/**")).permitAll()
-                                //.requestMatchers(AntPathRequestMatcher.antMatcher("/empl/**")).hasAnyRole("USER")
                                 .requestMatchers(AntPathRequestMatcher.antMatcher("/employee/**")).hasAnyRole("USER")
-                                //.anyRequest().authenticated()
-
                 )
                 .addFilterAfter(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .headers(headers -> headers.frameOptions().disable())
