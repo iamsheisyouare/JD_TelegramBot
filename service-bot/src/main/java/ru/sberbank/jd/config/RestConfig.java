@@ -7,16 +7,17 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * The type Rest config.
+ * Конфигурационный класс для настройки REST.
  */
 @Configuration
 @ComponentScan("ru.sberbank.jd")
 @PropertySource("classpath:application.properties")
 public class RestConfig {
+
     /**
-     * Gets rest template.
+     * Возвращает экземпляр RestTemplate.
      *
-     * @return the rest template
+     * @return экземпляр RestTemplate
      */
     @Bean
     RestTemplate getRestTemplate() {

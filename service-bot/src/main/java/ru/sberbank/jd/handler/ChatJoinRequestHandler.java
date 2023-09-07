@@ -5,18 +5,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodBoolean;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.ApproveChatJoinRequest;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.DeclineChatJoinRequest;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
-import org.telegram.telegrambots.meta.api.objects.User;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import ru.sberbank.jd.service.TelegramBot;
 
 /**
- * The type Chat join request handler.
+ * Обработчик запросов на присоединение к чату.
  */
 @Slf4j
 @Component
@@ -25,40 +23,46 @@ import ru.sberbank.jd.service.TelegramBot;
 public class ChatJoinRequestHandler {
 
     /**
-     * Process chat join request bot api method.
+     * Метод обработки запроса на присоединение к чату.
      *
-
-     * @param chatJoinRequest the chat join request
-     * @return the bot api method
+     * @param telegramBot     Telegram бот
+     * @param chatJoinRequest запрос на присоединение к чату
+     * @param userFound       флаг указывающий на наличие пользователя
      */
     public void processChatJoinRequest(TelegramBot telegramBot, ChatJoinRequest chatJoinRequest, Boolean userFound) {
         String userName = chatJoinRequest.getUser().getUserName();
 
-        log.info("Зашли в проверку ссылки приглашения");
+        log.info("Выполняется проверка ссылки приглашения");
         Long chatId = chatJoinRequest.getChat().getId();
         Long userId = chatJoinRequest.getUser().getId();
-        log.info("string userId = " + userId.toString() + ", chatJoinId = " + chatId + ", telegramBot chatID = " );
+        log.info("userId = " + userId.toString() + ", chatJoinId = " + chatId);
 
         BotApiMethodBoolean handleChatJoinRequest;
 
         if (userName != null && userFound) {
-            log.info("Approve need");
+            log.info("Требуется одобрение");
             handleChatJoinRequest = new ApproveChatJoinRequest(chatId.toString(), userId);
         } else {
-            log.info("Decline need");
+            log.info("Требуется отклонение");
             handleChatJoinRequest = new DeclineChatJoinRequest(chatId.toString(), userId);
         }
-        try{
+        try {
             Boolean result = telegramBot.execute(handleChatJoinRequest);
             log.info("result = " + result.toString());
+        } catch (TelegramApiException e) {
+            log.error("Ошибка при одобрении/отклонении: " + e.getMessage());
         }
-        catch (TelegramApiException e){
-            log.error("Approve/Decline failed: " + e.getMessage());
-        }
-        log.info("Approve/Decline finish");
+        log.info("Завершение одобрения/отклонения");
         responseToUser(telegramBot, userId, handleChatJoinRequest);
     }
 
+    /**
+     * Отправляет ответ пользователю о результатах запроса на присоединение к чату.
+     *
+     * @param telegramBot             Telegram бот
+     * @param userId                  идентификатор пользователя
+     * @param handleChatJoinRequest   объект для обработки запроса на присоединение к чату
+     */
     private void responseToUser(TelegramBot telegramBot, Long userId, BotApiMethodBoolean handleChatJoinRequest) {
         String msg;
         if (handleChatJoinRequest instanceof ApproveChatJoinRequest) {
@@ -67,7 +71,7 @@ public class ChatJoinRequestHandler {
             msg = "отклонена";
         }
         try {
-            telegramBot.execute(new SendMessage(userId.toString(), "Ваша заявка на вступление в группу " + msg));
+            telegramBot.execute(new SendMessage(userId.toString(), "Ваша заявка на присоединение к чату " + msg));
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }

@@ -10,6 +10,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 import ru.sberbank.jd.service.TelegramBot;
 
+/**
+ * Класс для инициализации Telegram бота.
+ */
 @Slf4j
 @Component
 public class BotInitializer {
@@ -17,14 +20,18 @@ public class BotInitializer {
     @Autowired
     TelegramBot bot;
 
+    /**
+     * Метод инициализации Telegram бота при старте приложения.
+     *
+     * @throws TelegramApiException возникает, если произошла ошибка при регистрации бота.
+     */
     @EventListener({ContextRefreshedEvent.class})
     public void init() throws TelegramApiException {
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
         try {
             telegramBotsApi.registerBot(bot);
-        }
-        catch (TelegramApiException e) {
-            log.error("Error occurred: " + e.getMessage());
+        } catch (TelegramApiException e) {
+            log.error("Произошла ошибка: " + e.getMessage());
         }
     }
 }
