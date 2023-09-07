@@ -18,9 +18,11 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends GenericFilter {
+
     private static final String AUTHORIZATION = "Authorization";
     private final JwtProvider jwtProvider;
 
@@ -35,15 +37,6 @@ public class JwtFilter extends GenericFilter {
             jwtInfoToken.setAuthenticated(true);
             SecurityContextHolder.getContext().setAuthentication(jwtInfoToken);
 
-            //вариант №2
-            /*
-            UsernamePasswordAuthenticationToken usertoken = new UsernamePasswordAuthenticationToken(
-                    username,
-                    null,
-                    jwtProvider.getRoles(token).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
-            );
-            SecurityContextHolder.getContext().setAuthentication(usertoken);
-             */
         }
         chain.doFilter(request, response);
     }
@@ -55,7 +48,6 @@ public class JwtFilter extends GenericFilter {
         }
         return null;
     }
-
 
 
 }

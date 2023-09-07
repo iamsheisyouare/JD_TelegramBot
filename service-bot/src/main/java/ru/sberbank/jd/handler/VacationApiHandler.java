@@ -44,6 +44,11 @@ public class VacationApiHandler {
         //ResponseEntity<Map<Long, String>> response = getUpcomingVacations("1");
         if (response.getStatusCode().is2xxSuccessful()) {
             Map<Long, String> vacationMap = response.getBody();
+
+            if (vacationMap.isEmpty()) {
+                return "У вас нет предстоящих отпусков.";
+            }
+
             String resultStr = "Ваши отпуска:\n";
             for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
                 String value = entry.getValue();
@@ -56,7 +61,7 @@ public class VacationApiHandler {
         }
     }
 
-    public ResponseEntity<String> deleteVacation(long vacationId) {
+    public String deleteVacation(long vacationId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -71,13 +76,13 @@ public class VacationApiHandler {
             );
 
             if (response.getStatusCode().is2xxSuccessful()) {
-                return ResponseEntity.ok("Отпуск успешно удален.");
+                return "Отпуск успешно удален.";
             } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Отпуск не удален. Повторите запрос");
+                return "Отпуск не удален. Повторите запрос" + response.getBody();
             }
         } catch (Exception e) {
             log.error("Error: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Ошибка при удалении отпуска.");
+            return "Ошибка при удалении отпуска." + e.getMessage();
         }
     }
 
@@ -127,7 +132,7 @@ public class VacationApiHandler {
 
             ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
             keyboardMarkup.setResizeKeyboard(true);
-            keyboardMarkup.setOneTimeKeyboard(true);
+            //keyboardMarkup.setOneTimeKeyboard(true);
             List<KeyboardRow> keyboardRows = new ArrayList<>();
 
             for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
