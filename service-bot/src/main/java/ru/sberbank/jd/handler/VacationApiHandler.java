@@ -75,7 +75,7 @@ public class VacationApiHandler {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return "Отпуск успешно удален.";
             } else {
-                return "Отпуск не удален. Повторите запрос" + response.getBody();
+                return "Отпуск не удален. Повторите запрос " + response.getBody();
             }
         } catch (Exception e) {
             log.error("Error: " + e.getMessage());
