@@ -198,4 +198,33 @@ public class EmployeeApiHandler {
         }
     }
 
+    /**
+     * Удаляет сотрудника по его имени в Telegram.
+     *
+     * @param telegramName      имя пользователя в Telegram
+     * @param userTelegramName  имя пользователя в Telegram, от имени которого выполняется запрос
+     * @return сообщение об успешном удалении или ошибке при удалении сотрудника
+     */
+    public String deleteEmployee(String telegramName, String userTelegramName) {
+        HttpHeaders headers = createHeaders(userTelegramName);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    String.format(integrationConfig.getEmployeeUrl(), integrationConfig.getGetSuffixEmployee() + "/" + telegramName),
+                    HttpMethod.DELETE,
+                    entity,
+                    String.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return "Сотрудник успешно удален.";
+            } else {
+                return "Сотрудник не удален. Повторите запрос: " + response.getBody();
+            }
+        } catch (Exception e) {
+            log.error("Ошибка: " + e.getMessage());
+            return "Ошибка при удалении сотрудника: " + e.getMessage();
+        }
+    }
+
 }

@@ -5,12 +5,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
-import org.telegram.telegrambots.meta.api.methods.botapimethods.BotApiMethodBoolean;
-import org.telegram.telegrambots.meta.api.methods.groupadministration.BanChatMember;
+import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
-import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage;
 import org.telegram.telegrambots.meta.api.objects.ChatJoinRequest;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
+import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardRemove;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
@@ -41,9 +41,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     static final String HELP_TEXT = "Этот бот создан для помощи сотрудникам.\n\n" +
             "Вы можете выбрать команды в меню или напечатать:\n\n" +
             "/start - приветственное сообщение\n\n" +
-            "/chat - доступ в чат сотрудников\n\n" +
+            "/join - доступ в чат сотрудников\n\n" +
             "/vacations - отображает текущий график отпусков пользователя\n\n" +
             "/new_vacation - заявка на новый отпуск\n\n" +
+            "/delete_vacation - удалить отпуск\n\n" +
+            "/newUser - (Админ) Добавить нового сотрудника\n\n" +
+            "/deleteUser - (Админ) Удалить сотрудника\n\n" +
             "/help - отображает данное сообщение";
 
     static final String ERROR_TEXT = "Error occurred: ";
@@ -72,6 +75,21 @@ public class TelegramBot extends TelegramLongPollingBot {
         this.userService = userService;
         this.userRepository = userRepository;
         this.chatIdSet.add(botConfig.getEmployeeChatId().toString());
+
+        List<BotCommand> listOfCommands = new ArrayList<>();
+        listOfCommands.add(new BotCommand("/start", "Начать работу"));
+        listOfCommands.add(new BotCommand("/join", "Ссылка в чат"));
+        listOfCommands.add(new BotCommand("/vacations", "Мои отпуска"));
+        listOfCommands.add(new BotCommand("/new_vacation", "Новый отпуск"));
+        listOfCommands.add(new BotCommand("/delete_vacation", "Удалить отпуск"));
+//        listOfCommands.add(new BotCommand("/newUser", "(Админ) Добавить нового сотрудника"));
+//        listOfCommands.add(new BotCommand("/deleteUser", "(Админ) Удалить сотрудника"));
+        listOfCommands.add(new BotCommand("/help", "Помощь"));
+        try {
+            this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
+        } catch (TelegramApiException e) {
+            log.error("Error setting bot's command list: " + e.getMessage());
+        }
     }
 
     /**
@@ -135,6 +153,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/newUser":
                     prepareAndSendMessage(chatId, "Введите ФИО сотрудника:");
                     botStateMap.put(telegramName, BotState.WAITING_NEW_USER_FIO);
+                    break;
+                case "/deleteUser":
+                    prepareAndSendMessage(chatId, "Введите Telegram name сотрудника:");
+                    botStateMap.put(telegramName, BotState.WAITING_DELETE_USER_TELEGRAMNAME);
                     break;
                 case "/vacations":
                     String vacationsMessage = vacationApiHandler.handleVacationsCommand(employeeId);
@@ -311,6 +333,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void handleUserState(long chatId, String telegramName, String messageText) {
         BotState currentState = botStateMap.get(telegramName);
         VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
+        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig, userService);
 
         switch (currentState) {
             case WAITING_START_DATE:
@@ -338,7 +361,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case WAITING_NEW_USER_TELEGRAMNAME:
                 telegramUserName = messageText;
-                EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig, userService);
                 EmployeeResponse employeeResponse = new EmployeeResponse();
 
                 if (employeeApiHandler.getEmployeeByTelegramName(telegramUserName, integrationConfig.getAdminLogin()) != null) {
@@ -355,7 +377,19 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 // Очищаем состояния и мапу ФИО
                 botStateMap.remove(telegramName);
+                break;
+            case WAITING_DELETE_USER_TELEGRAMNAME:
+                telegramUserName = messageText;
 
+                if (employeeApiHandler.getEmployeeByTelegramName(telegramUserName, integrationConfig.getAdminLogin()) == null) {
+                    prepareAndSendMessage(chatId, "Сотрудник не был удален, т.к. сотрудник с логином = '" + telegramUserName + "' не существует!");
+                    botStateMap.remove(telegramName);
+                    break;
+                }
+                handleDeleteEmployeeCommand(telegramUserName, chatId);
+
+                // Очищаем состояния
+                botStateMap.remove(telegramName);
                 break;
         }
     }
@@ -370,6 +404,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     public String handleDeleteVacationCommand(long vacationId, long chatId) {
         VacationApiHandler vacationApiHandler = new VacationApiHandler(integrationConfig, restTemplate);
         String deleteResponse = vacationApiHandler.deleteVacation(vacationId);
+        prepareAndSendMessage(chatId, deleteResponse);
+        return deleteResponse;
+    }
+
+    /**
+     * Обрабатывает команду на удаление сотрудника.
+     *
+     * @param telegramUserName имя пользователя в Telegram, которого необходимо удалить
+     * @param chatId           идентификатор чата
+     * @return ответ на удаление сотрудника
+     */
+    public String handleDeleteEmployeeCommand(String telegramUserName, long chatId) {
+        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig, userService);
+        String deleteResponse = employeeApiHandler.deleteEmployee(telegramUserName, telegramName);
         prepareAndSendMessage(chatId, deleteResponse);
         return deleteResponse;
     }
