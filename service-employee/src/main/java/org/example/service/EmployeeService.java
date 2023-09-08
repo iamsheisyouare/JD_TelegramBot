@@ -129,6 +129,12 @@ public class EmployeeService {
         }
     }
 
+    /**
+     * Нахождение списка сотрудников по статусу
+     * @param status
+     * @return список id сотрудников
+     */
+
     public ResponseEntity<List<Long>> findByStatus(EmployeeStatus status) {
         try {
             List<Employee> employees = employeeRepository.findByStatus(status);
@@ -143,6 +149,10 @@ public class EmployeeService {
     }
 
 
+    /**
+     * Список всех сотрудников со стаусами
+     * @return Map<id сотрудника, статус>
+     */
     public ResponseEntity<Map<Long, EmployeeStatus>> findAllWithStatus() {
         try {
             List<Employee> employees = employeeRepository.findAll();
@@ -155,6 +165,29 @@ public class EmployeeService {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
 
+    }
+
+    /**
+     * Уыольнение сотрудника
+     * @param name телеграмм имя
+     * @return    результат увольнения
+     */
+    public ResponseEntity<String> deleteEmpl(String name) {
+        try {
+            String message = "Сотрудник \"" + name + "\" ";
+            Employee employee = employeeRepository.findByTelegramName(name).orElse(null);
+            if (employee == null) {
+                return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(message + "не найден");
+            }
+            if (employee.getStatus() == EmployeeStatus.FIRED) {
+                return ResponseEntity.status(HttpStatusCode.valueOf(406)).body(message + "уже был уволен");
+            }
+            employee.setStatus(EmployeeStatus.FIRED);
+            Employee saved = employeeRepository.save(employee);
+            return ResponseEntity.ok(message + "уволен");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
 }
