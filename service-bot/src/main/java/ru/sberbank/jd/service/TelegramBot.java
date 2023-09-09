@@ -18,6 +18,7 @@ import ru.sberbank.jd.config.BotConfig;
 import ru.sberbank.jd.config.IntegrationConfig;
 import ru.sberbank.jd.dto.EmployeeResponse;
 import ru.sberbank.jd.enums.BotState;
+import ru.sberbank.jd.enums.EmployeeStatus;
 import ru.sberbank.jd.handler.ChatJoinRequestHandler;
 import ru.sberbank.jd.handler.EmployeeApiHandler;
 import ru.sberbank.jd.handler.VacationApiHandler;
@@ -34,10 +35,6 @@ import java.util.*;
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
-    final BotConfig botConfig;
-
-    final IntegrationConfig integrationConfig;
-
     static final String HELP_TEXT = "Этот бот создан для помощи сотрудникам.\n\n" +
             "Вы можете выбрать команды в меню или напечатать:\n\n" +
             "/start - приветственное сообщение\n\n" +
@@ -47,11 +44,15 @@ public class TelegramBot extends TelegramLongPollingBot {
             "/delete_vacation - удалить отпуск\n\n" +
             "/newUser - (Админ) Добавить нового сотрудника\n\n" +
             "/deleteUser - (Админ) Удалить сотрудника\n\n" +
+            "/restoreUser - (Админ) Восстановить сотрудника\n\n" +
             "/help - отображает данное сообщение";
 
     static final String ERROR_TEXT = "Error occurred: ";
+
+    private final BotConfig botConfig;
     private final RestTemplate restTemplate;
     private final UserService userService;
+    private final IntegrationConfig integrationConfig;
     private final UserRepository userRepository;
 
     private Set<String> chatIdSet = new HashSet<>();
@@ -137,7 +138,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
 
             telegramName = update.getMessage().getChat().getUserName();
-            employeeId = userService.getByTelegramName(telegramName).get().getEmployeeId();
+            if (userService.getByTelegramName(telegramName).isPresent()) {
+                employeeId = userService.getByTelegramName(telegramName).get().getEmployeeId();
+            } else {
+                prepareAndSendMessage(chatId, "Сотрудник не обнаружен! Обратитесь к администратору!");
+                return;
+            }
 
 
             switch (messageText) {
@@ -155,8 +161,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                     botStateMap.put(telegramName, BotState.WAITING_NEW_USER_FIO);
                     break;
                 case "/deleteUser":
-                    prepareAndSendMessage(chatId, "Введите Telegram name сотрудника:");
+                    prepareAndSendMessage(chatId, "Введите Telegram name сотрудника для удаления:");
                     botStateMap.put(telegramName, BotState.WAITING_DELETE_USER_TELEGRAMNAME);
+                    break;
+                case "/restoreUser":
+                    prepareAndSendMessage(chatId, "Введите Telegram name сотрудника для восстановления:");
+                    botStateMap.put(telegramName, BotState.WAITING_RESTORE_USER_TELEGRAMNAME);
                     break;
                 case "/vacations":
                     String vacationsMessage = vacationApiHandler.handleVacationsCommand(employeeId);
@@ -204,16 +214,30 @@ public class TelegramBot extends TelegramLongPollingBot {
     /**
      * Обрабатывает запрос на присоединение к чату.
      *
-     * @param update обновление от Telegram
+     * @param update             обновление от Telegram
+     * @param employeeApiHandler обработчик API для сотрудников
      */
     private void handleChatJoinRequest(Update update, EmployeeApiHandler employeeApiHandler) {
         ChatJoinRequest chatJoinRequest = update.getChatJoinRequest();
         Long chatId = chatJoinRequest.getChat().getId();
         telegramName = chatJoinRequest.getUser().getUserName();
 
-        Boolean userFound = (employeeApiHandler.getEmployeeByTelegramName(telegramName, integrationConfig.getAdminLogin()) != null);
+        // Получаем информацию о сотруднике по его имени в телеграме
+        EmployeeResponse employeeResponse = employeeApiHandler.getEmployeeByTelegramName(telegramName, integrationConfig.getAdminLogin());
+
+        boolean userFound = isUserValid(employeeResponse);     // Проверяем, найден ли пользователь и не уволен ли он
         ChatJoinRequestHandler chatJoinRequestHandler = new ChatJoinRequestHandler();
         chatJoinRequestHandler.processChatJoinRequest(this, chatJoinRequest, userFound);
+    }
+
+    /**
+     * Проверяет, является ли полученный ответ о сотруднике работающим пользователем.
+     *
+     * @param employeeResponse ответ о сотруднике
+     * @return true, если пользователь действителен; false в противном случае
+     */
+    private boolean isUserValid(EmployeeResponse employeeResponse) {
+        return employeeResponse != null && employeeResponse.getStatus() != EmployeeStatus.FIRED;
     }
 
     /**
@@ -225,14 +249,26 @@ public class TelegramBot extends TelegramLongPollingBot {
      */
     private void startCommandReceived(long chatId, String name, long userId) {
         String answer = "Привет, " + name + ", рад приветствовать тебя в боте!";
+        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig, userService);
+        String adminLogin = integrationConfig.getAdminLogin();
 
-        if (userService.getByTelegramName(name).isEmpty()) {
-            var user = new User(name, userId);
+        // Проверяем, есть ли пользователь в базе данных по его имени в телеграме
+        Optional<User> optionalUser = userService.getByTelegramName(name);
+        if (optionalUser.isEmpty()) {
+            User user = new User(name, userId);
             userRepository.save(user);
         }
 
-        if (userService.getByTelegramName(name).get().getTelegramUserId() == null) {
+        // Если у пользователя не указан идентификатор в телеграме, то сохраняем его
+        User user = optionalUser.get();
+        if (user.getTelegramUserId() == null) {
             userService.setTelegramUserId(name, userId);
+        }
+
+        // Получаем токен сотрудника по его имени в телеграме и сохраняем его для пользователя
+        String token = employeeApiHandler.getEmployeeByTelegramName(name, adminLogin).getToken();
+        if (token != null) {
+            userService.setUserToken(name, token);
         }
 
         sendMessage(chatId, answer);
@@ -361,7 +397,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 break;
             case WAITING_NEW_USER_TELEGRAMNAME:
                 telegramUserName = messageText;
-                EmployeeResponse employeeResponse = new EmployeeResponse();
+                EmployeeResponse employeeResponse;
 
                 if (employeeApiHandler.getEmployeeByTelegramName(telegramUserName, integrationConfig.getAdminLogin()) != null) {
                     prepareAndSendMessage(chatId, "Сотрудник не был создан, т.к. сотрудник с логином = '" + telegramUserName + "' уже существует!");
@@ -387,6 +423,19 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
                 }
                 handleDeleteEmployeeCommand(telegramUserName, chatId);
+
+                // Очищаем состояния
+                botStateMap.remove(telegramName);
+                break;
+            case WAITING_RESTORE_USER_TELEGRAMNAME:
+                telegramUserName = messageText;
+
+                if (employeeApiHandler.getEmployeeByTelegramName(telegramUserName, integrationConfig.getAdminLogin()) == null) {
+                    prepareAndSendMessage(chatId, "Сотрудник не был восстановлен, т.к. сотрудник с логином = '" + telegramUserName + "' не существует!");
+                    botStateMap.remove(telegramName);
+                    break;
+                }
+                handleRestoreEmployeeCommand(telegramUserName, chatId);
 
                 // Очищаем состояния
                 botStateMap.remove(telegramName);
@@ -420,6 +469,20 @@ public class TelegramBot extends TelegramLongPollingBot {
         String deleteResponse = employeeApiHandler.deleteEmployee(telegramUserName, telegramName);
         prepareAndSendMessage(chatId, deleteResponse);
         return deleteResponse;
+    }
+
+    /**
+     * Обрабатывает команду восстановления сотрудника.
+     *
+     * @param telegramUserName имя пользователя в Telegram
+     * @param chatId           идентификатор чата
+     * @return ответ на команду восстановления
+     */
+    public String handleRestoreEmployeeCommand(String telegramUserName, long chatId) {
+        EmployeeApiHandler employeeApiHandler = new EmployeeApiHandler(restTemplate, integrationConfig, userService);
+        String restoreResponse = employeeApiHandler.restoreEmployee(telegramUserName, telegramName);
+        prepareAndSendMessage(chatId, restoreResponse);
+        return restoreResponse;
     }
 
     /**

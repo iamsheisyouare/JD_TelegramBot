@@ -10,5 +10,6 @@ public enum BotState {
     WAITING_END_DATE,                   // Ожидание ввода даты окончания отпуска
     WAITING_NEW_USER_TELEGRAMNAME,      // Ожидание ввода Telegram-имени нового пользователя
     WAITING_VACATION_TO_DELETE,         // Ожидание выбора отпуска для удаления
-    WAITING_DELETE_USER_TELEGRAMNAME    // Ожидание ввода Telegram-имени пользователя для удаления
+    WAITING_DELETE_USER_TELEGRAMNAME,   // Ожидание ввода Telegram-имени пользователя для удаления
+    WAITING_RESTORE_USER_TELEGRAMNAME   // Ожидание ввода Telegram-имени пользователя для восстановления
 }

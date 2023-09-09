@@ -234,4 +234,34 @@ public class EmployeeApiHandler {
         }
     }
 
+    /**
+     * Восстанавливает информацию о сотруднике по его имени в телеграме.
+     *
+     * @param telegramName     имя сотрудника в телеграме
+     * @param userTelegramName имя пользователя в телеграме
+     * @return сообщение об успехе или ошибке восстановления сотрудника
+     */
+    public String restoreEmployee(String telegramName, String userTelegramName) {
+        HttpHeaders headers = createHeaders(userTelegramName);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.exchange(
+                    String.format(integrationConfig.getEmployeeUrl(), integrationConfig.getGetSuffixEmployee() + "/" + telegramName),
+                    HttpMethod.PUT,
+                    entity,
+                    String.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful()) {
+                return "Сотрудник успешно восстановлен.";
+            } else {
+                return "Сотрудник не восстановлен. Повторите запрос: " + response.getBody();
+            }
+        } catch (Exception e) {
+            log.error("Ошибка: " + e.getMessage());
+            return "Ошибка при восстановлении сотрудника: " + e.getMessage();
+        }
+    }
+
 }

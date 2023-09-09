@@ -123,6 +123,25 @@ public class UserService {
     }
 
     /**
+     * Устанавливает токен для пользователя по его имени в телеграме.
+     *
+     * @param telegramName имя пользователя в телеграме
+     * @param token        токен для установки
+     * @return объект пользователя после сохранения или null, если пользователь не найден
+     */
+    public User setUserToken(String telegramName, String token) {
+        Optional<User> optionalUser = getByTelegramName(telegramName);
+
+        if (optionalUser.isPresent()) {
+            User user = optionalUser.get();
+            user.setToken(token);
+            return userRepository.save(user);
+        } else {
+            return null;
+        }
+    }
+
+    /**
      * Находит пользователя по его ID.
      *
      * @param id ID пользователя
