@@ -18,6 +18,7 @@ public class VacationController {
 
     @Autowired
     private VacationService vacationService;
+
     @GetMapping("/vacation")
     public ResponseEntity<Map<Long, String>> getUpcomingVacations(@RequestParam Long employeeId) {
         try {
@@ -58,13 +59,6 @@ public class VacationController {
             if (totalVacationDays + newVacationDays > 28) {
                 return ResponseEntity.badRequest().body("Общая продолжительность отпусков не должна превышать 28 дней");
             }
-
-            // Форматирование дат в нужный формат YYYY-MM-dd
-//            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-//            String formattedStartDate = vacationRequest.getStartDate().format(formatter);
-//            String formattedEndDate = vacationRequest.getEndDate().format(formatter);
-//            vacation.setStartDate(LocalDate.parse(formattedStartDate));
-//            vacation.setEndDate(LocalDate.parse(formattedEndDate));
 
             Vacation vacation = new Vacation();
             vacation.setEmployeeId(vacationRequest.getEmployeeId());
