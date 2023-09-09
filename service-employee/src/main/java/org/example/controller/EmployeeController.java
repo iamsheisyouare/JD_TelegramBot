@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,6 +63,12 @@ public class EmployeeController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     @DeleteMapping("{name}")
     public ResponseEntity<String> delete(@PathVariable String name) {
-        return service.deleteEmpl(name);
+        return service.deleteOrRestoreEmpl(name,true);
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PatchMapping("{name}")
+    public ResponseEntity<String> restore(@PathVariable String name) {
+        return service.deleteOrRestoreEmpl(name,false);
     }
 }
