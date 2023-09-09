@@ -131,6 +131,7 @@ public class EmployeeService {
 
     /**
      * Нахождение списка сотрудников по статусу
+     *
      * @param status
      * @return список id сотрудников
      */
@@ -151,6 +152,7 @@ public class EmployeeService {
 
     /**
      * Список всех сотрудников со стаусами
+     *
      * @return Map<id сотрудника, статус>
      */
     public ResponseEntity<Map<Long, EmployeeStatus>> findAllWithStatus() {
@@ -168,23 +170,37 @@ public class EmployeeService {
     }
 
     /**
-     * Уыольнение сотрудника
-     * @param name телеграмм имя
-     * @return    результат увольнения
+     * Увольнение / восстановление сотрудника
+     * @param name телегррам имя сотрудника
+     * @param isDeleted true удалить/false восстановить
+     * @return
      */
-    public ResponseEntity<String> deleteEmpl(String name) {
+    public ResponseEntity<String> deleteOrRestoreEmpl(String name, boolean isDeleted) {
         try {
+            String action = (isDeleted ? "уволен" : "восстановлен");
             String message = "Сотрудник \"" + name + "\" ";
             Employee employee = employeeRepository.findByTelegramName(name).orElse(null);
             if (employee == null) {
                 return ResponseEntity.status(HttpStatusCode.valueOf(404)).body(message + "не найден");
             }
-            if (employee.getStatus() == EmployeeStatus.FIRED) {
-                return ResponseEntity.status(HttpStatusCode.valueOf(406)).body(message + "уже был уволен");
+
+            if (isDeleted) {
+                if (employee.getStatus() == EmployeeStatus.FIRED) {
+                    return ResponseEntity.status(HttpStatusCode.valueOf(406)).body(message + "уже был уволен");
+                }
+                employee.setStatus(EmployeeStatus.FIRED);
             }
-            employee.setStatus(EmployeeStatus.FIRED);
+            else
+            {
+                if (employee.getStatus() == EmployeeStatus.WORK) {
+                    return ResponseEntity.status(HttpStatusCode.valueOf(406)).body(message + "в данный момент работает");
+                }
+                employee.setStatus(EmployeeStatus.WORK);
+
+            }
+
             Employee saved = employeeRepository.save(employee);
-            return ResponseEntity.ok(message + "уволен");
+            return ResponseEntity.ok(message + action);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
