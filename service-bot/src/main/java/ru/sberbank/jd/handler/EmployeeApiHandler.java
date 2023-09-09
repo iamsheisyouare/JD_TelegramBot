@@ -29,6 +29,13 @@ public class EmployeeApiHandler {
     private final UserService userService;
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
+    /**
+     * Конструктор класса EmployeeApiHandler.
+     *
+     * @param restTemplate      объект RestTemplate для выполнения HTTP-запросов
+     * @param integrationConfig конфигурация интеграции
+     * @param userService       сервис пользователя
+     */
     @Autowired
     public EmployeeApiHandler(RestTemplate restTemplate, IntegrationConfig integrationConfig, UserService userService) {
         this.restTemplate = restTemplate;
@@ -201,8 +208,8 @@ public class EmployeeApiHandler {
     /**
      * Удаляет сотрудника по его имени в Telegram.
      *
-     * @param telegramName      имя пользователя в Telegram
-     * @param userTelegramName  имя пользователя в Telegram, от имени которого выполняется запрос
+     * @param telegramName     имя пользователя в Telegram
+     * @param userTelegramName имя пользователя в Telegram, от имени которого выполняется запрос
      * @return сообщение об успешном удалении или ошибке при удалении сотрудника
      */
     public String deleteEmployee(String telegramName, String userTelegramName) {

@@ -59,9 +59,9 @@ public class ChatJoinRequestHandler {
     /**
      * Отправляет ответ пользователю о результатах запроса на присоединение к чату.
      *
-     * @param telegramBot             Telegram бот
-     * @param userId                  идентификатор пользователя
-     * @param handleChatJoinRequest   объект для обработки запроса на присоединение к чату
+     * @param telegramBot           Telegram бот
+     * @param userId                идентификатор пользователя
+     * @param handleChatJoinRequest объект для обработки запроса на присоединение к чату
      */
     private void responseToUser(TelegramBot telegramBot, Long userId, BotApiMethodBoolean handleChatJoinRequest) {
         String msg;
