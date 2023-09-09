@@ -19,6 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Обработчик API для работы с отпусками.
+ */
 @Slf4j
 @Component
 public class VacationApiHandler {
@@ -29,16 +32,27 @@ public class VacationApiHandler {
     @Autowired
     UserService userService;
 
+    /**
+     * Конструктор класса VacationApiHandler.
+     *
+     * @param integrationConfig конфигурация интеграции
+     * @param restTemplate      экземпляр RestTemplate для отправки запросов
+     */
     @Autowired
     public VacationApiHandler(IntegrationConfig integrationConfig, RestTemplate restTemplate) {
         this.integrationConfig = integrationConfig;
         this.restTemplate = restTemplate;
     }
 
+    /**
+     * Обрабатывает команду на получение списка отпусков.
+     *
+     * @param employeeId идентификатор сотрудника
+     * @return список предстоящих отпусков или сообщение об ошибке
+     */
     public String handleVacationsCommand(Long employeeId) {
 
         ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeId);
-        //ResponseEntity<Map<Long, String>> response = getUpcomingVacations("1");
         if (response.getStatusCode().is2xxSuccessful()) {
             Map<Long, String> vacationMap = response.getBody();
 
@@ -46,18 +60,23 @@ public class VacationApiHandler {
                 return "У вас нет предстоящих отпусков.";
             }
 
-            String resultStr = "Ваши отпуска:\n";
+            StringBuilder resultStr = new StringBuilder("Ваши отпуска:\n");
             for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
-                String value = entry.getValue();
-                resultStr += value + "\n";
+                resultStr.append(entry.getValue()).append("\n");
             }
 
-            return resultStr;//messageBuilder.toString();
+            return resultStr.toString();
         } else {
             return "Ошибка при запросе списка отпусков.";
         }
     }
 
+    /**
+     * Удаляет отпуск по указанному идентификатору.
+     *
+     * @param vacationId идентификатор отпуска
+     * @return сообщение об успешном удалении или ошибке
+     */
     public String deleteVacation(long vacationId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -75,14 +94,22 @@ public class VacationApiHandler {
             if (response.getStatusCode().is2xxSuccessful()) {
                 return "Отпуск успешно удален.";
             } else {
-                return "Отпуск не удален. Повторите запрос " + response.getBody();
+                return "Отпуск не удален. Повторите запрос: " + response.getBody();
             }
         } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
-            return "Ошибка при удалении отпуска." + e.getMessage();
+            log.error("Ошибка: " + e.getMessage());
+            return "Ошибка при удалении отпуска: " + e.getMessage();
         }
     }
 
+    /**
+     * Добавляет отпуск для указанного сотрудника.
+     *
+     * @param employeeId идентификатор сотрудника
+     * @param startDate  дата начала отпуска
+     * @param endDate    дата окончания отпуска
+     * @return сообщение об успешном добавлении или ошибке
+     */
     public String addVacation(Long employeeId, LocalDate startDate, LocalDate endDate) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -113,11 +140,17 @@ public class VacationApiHandler {
                 return "Ошибка при добавлении отпуска: " + response.getBody();
             }
         } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
+            log.error("Ошибка: " + e.getMessage());
             return "Ошибка при добавлении отпуска: " + e.getMessage();
         }
     }
 
+    /**
+     * Возвращает кнопки отпусков в виде ReplyKeyboardMarkup для указанного сотрудника.
+     *
+     * @param employeeId идентификатор сотрудника
+     * @return ReplyKeyboardMarkup с кнопками отпусков или null, если отпусков нет
+     */
     public ReplyKeyboardMarkup getVacationButtons(Long employeeId) {
         ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeId);
 
@@ -129,7 +162,7 @@ public class VacationApiHandler {
 
             ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
             keyboardMarkup.setResizeKeyboard(true);
-            //keyboardMarkup.setOneTimeKeyboard(true);
+
             List<KeyboardRow> keyboardRows = new ArrayList<>();
 
             for (Map.Entry<Long, String> entry : vacationMap.entrySet()) {
@@ -146,6 +179,13 @@ public class VacationApiHandler {
         }
     }
 
+    /**
+     * Возвращает идентификатор отпуска на основе текста кнопки.
+     *
+     * @param buttonText текст кнопки
+     * @param employeeId идентификатор сотрудника
+     * @return идентификатор отпуска или null, если не удалось найти соответствующий отпуск
+     */
     public Long getVacationIdByText(String buttonText, Long employeeId) {
         ResponseEntity<Map<Long, String>> response = getUpcomingVacations(employeeId);
         if (response != null && response.getStatusCode().is2xxSuccessful()) {
@@ -155,7 +195,7 @@ public class VacationApiHandler {
                     if (entry.getValue().equals(buttonText)) {
                         try {
                             return entry.getKey();
-                        } catch (Exception e){
+                        } catch (Exception e) {
                             return null;
                         }
                     }
@@ -165,8 +205,12 @@ public class VacationApiHandler {
         return null; // Если не удалось найти соответствующий отпуск
     }
 
-
-
+    /**
+     * Отправляет HTTP-запрос для получения предстоящих отпусков сотрудника.
+     *
+     * @param employeeId идентификатор сотрудника
+     * @return ResponseEntity с картой отпусков или ResponseEntity с ошибкой в случае неудачи
+     */
     public ResponseEntity<Map<Long, String>> getUpcomingVacations(Long employeeId) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -178,21 +222,12 @@ public class VacationApiHandler {
                     String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation?employeeId=" + employeeId),
                     HttpMethod.GET,
                     entity,
-                    new ParameterizedTypeReference<Map<Long, String>>() {}
+                    new ParameterizedTypeReference<Map<Long, String>>() {
+                    }
             );
-            /*
-            //TODO переписать определение response
-            ResponseEntity<Map<Long,String>> response = restTemplate.exchange(
-                    String.format(integrationConfig.getVacationUrl(), integrationConfig.getGetSuffixVacation() + "/vacation?telegramUsername=" + telegramUsername),
-                    HttpMethod.GET,
-                    entity,
-                    new ParameterizedTypeReference<Map<Long, String>>() {}
-            );
-            //TODO переписать определение response
-             */
             return ResponseEntity.ok(response.getBody());
         } catch (Exception e) {
-            log.error("Error: " + e.getMessage());
+            log.error("Ошибка: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
