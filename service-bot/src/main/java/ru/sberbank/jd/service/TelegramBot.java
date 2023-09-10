@@ -131,20 +131,19 @@ public class TelegramBot extends TelegramLongPollingBot {
             chatId = update.getMessage().getChatId();
             userId = update.getMessage().getFrom().getId();
 
+            telegramName = update.getMessage().getChat().getUserName();
+            if (telegramName != null && userService.getByTelegramName(telegramName).isPresent()) {
+                employeeId = userService.getByTelegramName(telegramName).get().getEmployeeId();
+            } else if (!chatId.toString().equals(botConfig.getEmployeeChatId().toString())){
+                prepareAndSendMessage(chatId, "Сотрудник не обнаружен! Обратитесь к администратору!");
+                return;
+            }
+
             // Проверка состояний пользователя
             if (botStateMap.containsKey(telegramName)) {
                 handleUserState(chatId, telegramName, messageText);
                 return; // Важно вернуться после обработки состояния пользователя
             }
-
-            telegramName = update.getMessage().getChat().getUserName();
-            if (userService.getByTelegramName(telegramName).isPresent()) {
-                employeeId = userService.getByTelegramName(telegramName).get().getEmployeeId();
-            } else {
-                prepareAndSendMessage(chatId, "Сотрудник не обнаружен! Обратитесь к администратору!");
-                return;
-            }
-
 
             switch (messageText) {
                 case "/start":
